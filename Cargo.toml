@@ -1,0 +1,18 @@
+[package]
+name = "raytracerchallenge"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+debug = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[features]
+specular_as_float = []
+
+[[bin]]
+name = "world_camera"
+required-features = ["specular_as_float"]
