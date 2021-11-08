@@ -20,7 +20,6 @@ impl Sphere {
         self.transformation_matrix = m;
         self.inverted_transformation_matrix = m.inverse();
     }
-
 }
 
 impl<'a> Shape<'a> for Sphere {
@@ -53,11 +52,9 @@ impl<'a> Shape<'a> for Sphere {
         self.transformation_matrix
     }
 
-    fn normal_at(&self, p: Point) -> Vector {
-        let p_object_space = self.inverse_transformation_matrix() * p;
-        let res_object_space = (p_object_space - Point::new(0, 0, 0)).normalized();
-        let res_world_space = self.inverse_transformation_matrix().transpose() * res_object_space;
-        res_world_space.normalized()
+    fn local_normal_at(&self, p: Point) -> Vector {
+        let res_object_space = (p - Point::new(0, 0, 0)).normalized();
+        res_object_space.normalized()
     }
 
     fn inverse_transformation_matrix(&self) -> Mat4 {
@@ -77,9 +74,16 @@ impl Default for Sphere {
 
 #[cfg(test)]
 mod sphere_tests {
-    use std::f64::consts::PI;
 
-    use crate::{epsilon::epsilon_equal, intersection::Intersection, material::Material, matrix::{Mat4, IDENTITY_MATRIX_4}, object::ReferenceObject, ray::Ray, shapes::shape::Shape, tuple::{Point, Vector}};
+    use crate::{
+        intersection::Intersection,
+        material::Material,
+        matrix::IDENTITY_MATRIX_4,
+        object::ReferenceObject,
+        ray::Ray,
+        shapes::shape::Shape,
+        tuple::{Point, Vector},
+    };
 
     use super::Sphere;
 
@@ -94,19 +98,6 @@ mod sphere_tests {
         let mut xs = Vec::new();
         let r_os = s.transform_ray_to_object_space(&r);
         s.local_intersect(r_os, &mut xs);
-        assert_eq!(xs, reference);
-    }
-
-    #[test]
-    fn ray_sphere_intersection() {
-        let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
-        let s = Sphere::default();
-        let reference = vec![
-            Intersection::new(4.0, ReferenceObject::Sphere(&s)),
-            Intersection::new(6.0, ReferenceObject::Sphere(&s)),
-        ];
-        let mut xs = Vec::new();
-        s.intersect(&r, &mut xs);
         assert_eq!(xs, reference);
     }
 
@@ -164,28 +155,6 @@ mod sphere_tests {
     }
 
     #[test]
-    fn intersect_scaled() {
-        let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
-        let mut s = Sphere::default();
-        s.set_transformation(Mat4::new_scaling(2, 2, 2));
-        let mut xs = Vec::new();
-        s.intersect(&r, &mut xs);
-        assert_eq!(xs.len(), 2);
-        assert!(epsilon_equal(xs[0].t, 3.0));
-        assert!(epsilon_equal(xs[1].t, 7.0));
-    }
-
-    #[test]
-    fn intersect_translated() {
-        let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
-        let mut s = Sphere::default();
-        s.set_transformation(Mat4::new_translation(5, 0, 0));
-        let mut xs = Vec::new();
-        s.intersect(&r, &mut xs);
-        assert_eq!(xs.len(), 0);
-    }
-
-    #[test]
     fn normal_at_x() {
         let s = Sphere::default();
         let n = s.normal_at(Point::new(1, 0, 0));
@@ -216,27 +185,6 @@ mod sphere_tests {
         let s = Sphere::default();
         let n = s.normal_at(Point::new(c, c, c));
         assert_eq!(n, n.normalized());
-    }
-    #[test]
-    fn normal_translated() {
-        let mut s = Sphere::default();
-        let m = Mat4::new_translation(0, 1, 0);
-        s.set_transformation(m);
-        let n = s.normal_at(Point::new(0.0, 1.70711, -0.70711));
-        assert_eq!(n, Vector::new(0.0, 0.70711, -0.70711));
-    }
-
-    #[test]
-    fn normal_transformed() {
-        let mut s = Sphere::default();
-        let m = Mat4::new_scaling(1.0, 0.5, 1.0) * Mat4::new_rotation_z(PI / 5.0);
-        s.set_transformation(m);
-        let n = s.normal_at(Point::new(
-            0.0,
-            2.0_f64.sqrt() / 2.0,
-            -(2.0_f64.sqrt() / 2.0),
-        ));
-        assert_eq!(n, Vector::new(0.0, 0.97014, -0.24254));
     }
 
     #[test]

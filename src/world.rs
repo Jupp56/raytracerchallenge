@@ -1,4 +1,15 @@
-use crate::{color::{Color, BLACK}, intersection::{hit, Intersection, PreparedComputations}, light::PointLight, material::{Material, Shininess}, matrix::Mat4, object::{Object, ReferenceObject}, ray::Ray, shapes::shape::Shape, shapes::sphere::Sphere, tuple::Point};
+use crate::{
+    color::{Color, BLACK},
+    intersection::{hit, Intersection, PreparedComputations},
+    light::PointLight,
+    material::{Material, Shininess},
+    matrix::Mat4,
+    object::Object,
+    ray::Ray,
+    shapes::shape::Shape,
+    shapes::sphere::Sphere,
+    tuple::Point,
+};
 
 #[derive(Clone, Debug)]
 pub struct World {
@@ -114,18 +125,6 @@ impl Default for World {
             objects: Default::default(),
             lights: Default::default(),
         }
-    }
-}
-
-fn get_color_by_object(comps: &PreparedComputations, light: &PointLight, in_shadow: bool) -> Color {
-    match comps.object {
-        ReferenceObject::Sphere(s) => s.material.lighting(
-            light,
-            comps.over_point,
-            comps.eyev,
-            comps.normalv,
-            in_shadow,
-        ),
     }
 }
 

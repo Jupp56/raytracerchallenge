@@ -28,8 +28,14 @@ pub trait Shape<'a> {
     fn inverse_of_transpose_of_transformation_matrix(&self) -> Mat4 {
         self.inverse_transformation_matrix().transpose()
     }
-    /// The object's normal at a given point.
-    fn normal_at(&self, p: Point) -> Vector;
+    /// The object's normal at a given point (world space).
+    fn normal_at(&self, p: Point) -> Vector {
+        let local_point = self.inverse_transformation_matrix() * p;
+        let local_normal = self.local_normal_at(local_point);
+        let world_normal = self.inverse_of_transpose_of_transformation_matrix() * local_normal;
+        world_normal.normalized()
+    }
+    fn local_normal_at(&self, p: Point) -> Vector;
     /// converts a point to object space
     fn to_object_space(&self, p: Point) -> Point {
         self.inverse_transformation_matrix() * p
@@ -57,16 +63,24 @@ pub trait Shape<'a> {
 
 #[cfg(test)]
 mod shape_tests {
-    use crate::{matrix::{IDENTITY_MATRIX_4, Mat4}, ray::Ray, tuple::{Point, Vector}};
+    use std::f64::consts::PI;
+
+    use crate::{
+        matrix::{Mat4, IDENTITY_MATRIX_4},
+        ray::Ray,
+        tuple::{Point, Vector},
+    };
 
     use super::Shape;
+
+    static mut SAVED_RAY: Option<Ray> = None;
 
     struct TestShape {
         transformation_matrix: Mat4,
     }
 
     impl TestShape {
-        pub fn complex_matrix() -> Self {
+        fn complex_matrix() -> Self {
             Self {
                 transformation_matrix: Mat4::new([
                     [2., 1., 4., 5.],
@@ -76,12 +90,16 @@ mod shape_tests {
                 ]),
             }
         }
+
+        fn set_transform(&mut self, transform: Mat4) {
+            self.transformation_matrix = transform;
+        }
     }
 
     impl Default for TestShape {
         fn default() -> Self {
             Self {
-                transformation_matrix: IDENTITY_MATRIX_4
+                transformation_matrix: IDENTITY_MATRIX_4,
             }
         }
     }
@@ -90,38 +108,77 @@ mod shape_tests {
         fn local_intersect(
             &'a self,
             ray: crate::ray::Ray,
-            intersections: &mut Vec<crate::intersection::Intersection<'a>>,
+            _intersections: &mut Vec<crate::intersection::Intersection<'a>>,
         ) {
-            
+            unsafe {
+                SAVED_RAY = Some(ray);
+            }
         }
 
         fn material(&self) -> crate::material::Material {
-            todo!()
+            unimplemented!()
         }
 
         fn transformation_matrix(&self) -> crate::matrix::Mat4 {
             self.transformation_matrix
         }
 
-        fn normal_at(&self, p: crate::tuple::Point) -> crate::tuple::Vector {
-            todo!()
+        fn local_normal_at(&self, p: Point) -> Vector {
+            Vector::new(p.x, p.y, p.z)
         }
     }
-
-#[test]
-fn intersect() {
-    let t = TestShape::default();
-    let mut ins = Vec::new();
-    let ray = Ray::new(Point::new(0, 0, 2), Vector::new(0, 0, -1));
-    t.intersect(&ray,&mut ins);
-    assert_eq!(ins.len(), 2);
-}
 
     #[test]
     fn inverse_transformation_matrix() {
         let t = TestShape::complex_matrix();
-        assert_eq!(t.inverse_transformation_matrix(), t.transformation_matrix.inverse());
+        assert_eq!(
+            t.inverse_transformation_matrix(),
+            t.transformation_matrix.inverse()
+        );
     }
 
+    #[test]
+    fn intersect_scaled_shape_with_ray() {
+        let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
+        let mut s = TestShape::default();
+        s.set_transform(Mat4::new_scaling(2, 2, 2));
+        let mut intersections = Vec::new();
+        let _xs = s.intersect(&r, &mut intersections);
+        unsafe {
+            assert_eq!(SAVED_RAY.unwrap().origin, Point::new(0.0, 0.0, -2.5));
+            assert_eq!(SAVED_RAY.unwrap().direction, Vector::new(0., 0., 0.5));
+        }
+    }
+    #[test]
+    fn intersect_translated_shape_with_ray() {
+        let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
+        let mut s = TestShape::default();
+        s.set_transform(Mat4::new_translation(5, 0, 0));
+        let mut intersections = Vec::new();
+        let _xs = s.intersect(&r, &mut intersections);
+        unsafe {
+            assert_eq!(SAVED_RAY.unwrap().origin, Point::new(-5, 0, -5));
+            assert_eq!(SAVED_RAY.unwrap().direction, Vector::new(0, 0, 1));
+        }
+    }
 
+    #[test]
+    fn test_normal_translated() {
+        let mut s = TestShape::default();
+        s.set_transform(Mat4::new_translation(0, 1, 0));
+        let n = s.normal_at(Point::new(0.0, 1.70711, -0.70711));
+        assert_eq!(n, Vector::new(0.0, 0.70711, -0.70711));
+    }
+    #[test]
+    fn test_normal_transformed() {
+        let mut s = TestShape::default();
+        let m = Mat4::new_scaling(1.0, 0.5, 1.0) * Mat4::new_rotation_z(PI / 5.);
+        s.set_transform(m);
+        let n = s.normal_at(Point::new(
+            0.0,
+            2.0_f64.sqrt() / 2.0,
+            -(2.0_f64.sqrt() / 2.0),
+        ));
+        assert_eq!(n, Vector::new(0.0, 0.97014, -0.24254));
+    }
 }

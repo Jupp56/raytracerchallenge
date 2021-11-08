@@ -2,12 +2,12 @@ use std::f64::consts::PI;
 use std::fs::File;
 use std::io::Write;
 
-use raytracerchallenge::shapes::shape::Shape;
 use raytracerchallenge::canvas::Canvas;
 use raytracerchallenge::color::Color;
 use raytracerchallenge::intersection::hit;
 use raytracerchallenge::ppm::write_to_ppm;
 use raytracerchallenge::ray::Ray;
+use raytracerchallenge::shapes::shape::Shape;
 use raytracerchallenge::shapes::sphere::Sphere;
 use raytracerchallenge::tuple::{Point, Vector};
 

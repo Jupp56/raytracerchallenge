@@ -1,4 +1,10 @@
-use crate::{epsilon::EPSILON, shapes::shape::Shape, object::ReferenceObject, ray::Ray, tuple::{Point, Vector}};
+use crate::{
+    epsilon::EPSILON,
+    object::ReferenceObject,
+    ray::Ray,
+    shapes::shape::Shape,
+    tuple::{Point, Vector},
+};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Intersection<'a> {
@@ -81,7 +87,8 @@ pub fn hit(intersections: Vec<Intersection>) -> Option<Intersection> {
 #[cfg(test)]
 mod intersection_tests {
     use crate::{
-        epsilon::epsilon_equal, intersection::Intersection, object::ReferenceObject, shapes::sphere::Sphere,
+        epsilon::epsilon_equal, intersection::Intersection, object::ReferenceObject,
+        shapes::sphere::Sphere,
     };
 
     #[test]

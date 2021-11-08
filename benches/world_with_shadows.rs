@@ -105,7 +105,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     let world = setup_world();
     let camera = setup_camera();
 
-    c.bench_function("world", |b| b.iter(|| world_bench(black_box(world.clone()), black_box(camera.clone()))));
+    c.bench_function("world", |b| {
+        b.iter(|| world_bench(black_box(world.clone()), black_box(camera.clone())))
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);

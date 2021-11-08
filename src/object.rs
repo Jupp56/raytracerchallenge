@@ -33,9 +33,9 @@ impl<'a> Shape<'a> for Object {
         }
     }
 
-    fn normal_at(&self, p: Point) -> crate::tuple::Vector {
+    fn local_normal_at(&self, p: Point) -> crate::tuple::Vector {
         match self {
-            Object::Sphere(s) => s.normal_at(p),
+            Object::Sphere(s) => s.local_normal_at(p),
         }
     }
 
@@ -119,9 +119,9 @@ impl<'a> Shape<'a> for ReferenceObject<'a> {
         }
     }
 
-    fn normal_at(&self, p: Point) -> crate::tuple::Vector {
+    fn local_normal_at(&self, p: Point) -> crate::tuple::Vector {
         match self {
-            ReferenceObject::Sphere(s) => s.normal_at(p),
+            ReferenceObject::Sphere(s) => s.local_normal_at(p),
         }
     }
 }

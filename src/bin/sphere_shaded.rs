@@ -4,15 +4,15 @@ use std::io::Write;
 
 use raytracerchallenge::canvas::Canvas;
 use raytracerchallenge::color::Color;
-use raytracerchallenge::intersection::{hit};
+use raytracerchallenge::intersection::hit;
 use raytracerchallenge::light::PointLight;
 use raytracerchallenge::material::Material;
 use raytracerchallenge::matrix::Mat4;
 use raytracerchallenge::ppm::write_to_ppm;
 use raytracerchallenge::ray::Ray;
+use raytracerchallenge::shapes::shape::Shape;
 use raytracerchallenge::shapes::sphere::Sphere;
 use raytracerchallenge::tuple::{Point, Vector};
-use raytracerchallenge::shapes::shape::Shape;
 
 fn main() {
     let canvas = cast();
