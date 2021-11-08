@@ -1,4 +1,9 @@
-use crate::{epsilon::EPSILON, object::{ReferenceObject}, ray::Ray, tuple::{Point, Vector}};
+use crate::{
+    epsilon::EPSILON,
+    object::ReferenceObject,
+    ray::Ray,
+    tuple::{Point, Vector},
+};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Intersection<'a> {
@@ -114,7 +119,15 @@ mod intersection_tests {
 
 #[cfg(test)]
 mod hit_tests {
-    use crate::{epsilon::EPSILON, intersection::hit, matrix::Mat4, object::{self, ReferenceObject}, ray::Ray, shapes::Sphere, tuple::{Point, Vector}};
+    use crate::{
+        epsilon::EPSILON,
+        intersection::hit,
+        matrix::Mat4,
+        object::{self, ReferenceObject},
+        ray::Ray,
+        shapes::Sphere,
+        tuple::{Point, Vector},
+    };
 
     use super::Intersection;
 
@@ -201,7 +214,7 @@ mod hit_tests {
 
     #[test]
     fn precompute_over_z() {
-        let r = Ray::new(Point::new(0,0,-5), Vector::new(0, 0, 1));
+        let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
         let mut shape = Sphere::new();
         shape.set_transformation(Mat4::new_translation(0, 0, 1));
         let i = Intersection::new(5, ReferenceObject::Sphere(&shape));

@@ -9,8 +9,8 @@ use raytracerchallenge::light::PointLight;
 use raytracerchallenge::material::Material;
 use raytracerchallenge::matrix::Mat4;
 use raytracerchallenge::ppm::write_to_ppm;
-use raytracerchallenge::shapes::Sphere;
 use raytracerchallenge::ray::Ray;
+use raytracerchallenge::shapes::Sphere;
 use raytracerchallenge::tuple::{Point, Vector};
 
 fn main() {
@@ -23,7 +23,6 @@ fn main() {
 }
 
 pub fn cast() -> Canvas {
-
     let resolution: (usize, usize) = (1000, 1000);
 
     let mut c = Canvas::new_with_color(resolution.0, resolution.1, Color::new(0.0, 0.0, 0.0));
@@ -36,7 +35,6 @@ pub fn cast() -> Canvas {
     let light_position = Point::new(-10, 10, -10);
     let light_color = Color::new(1, 1, 1);
     let light = PointLight::new(light_position, light_color);
-
 
     let transform = Mat4::new_scaling(1.0, 0.2, 1.0);
     sphere.set_transformation(transform);
@@ -53,7 +51,7 @@ pub fn cast() -> Canvas {
             sphere.intersect(&ray, &mut intersections);
             match hit(intersections) {
                 Some(intersection) => {
-                    let object  =  match intersection.object {
+                    let object = match intersection.object {
                         raytracerchallenge::object::ReferenceObject::Sphere(s) => s,
                     };
                     let point = ray.position(intersection.t);

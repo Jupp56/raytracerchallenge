@@ -77,7 +77,14 @@ impl Material {
         }
     }
 
-    pub fn lighting(&self, light: &PointLight, point: Point, eyev: Vector, normalv: Vector, in_shadow: bool) -> Color {
+    pub fn lighting(
+        &self,
+        light: &PointLight,
+        point: Point,
+        eyev: Vector,
+        normalv: Vector,
+        in_shadow: bool,
+    ) -> Color {
         let effective_color = self.color * light.intensity;
 
         let lightv = (light.position - point).normalized();
@@ -169,7 +176,11 @@ mod material_tests {
 
 #[cfg(test)]
 mod lighting_tests {
-    use crate::{color::Color, light::PointLight, tuple::{Point, Vector}};
+    use crate::{
+        color::Color,
+        light::PointLight,
+        tuple::{Point, Vector},
+    };
 
     use super::Material;
 

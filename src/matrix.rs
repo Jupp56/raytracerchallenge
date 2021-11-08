@@ -1,6 +1,9 @@
 use std::ops::{Index, IndexMut, Mul, MulAssign};
 
-use crate::{epsilon::epsilon_equal, tuple::{Point, Vector}};
+use crate::{
+    epsilon::epsilon_equal,
+    tuple::{Point, Vector},
+};
 
 pub type Mat4 = Matrix<4>;
 pub type Mat3 = Matrix<3>;
@@ -111,7 +114,6 @@ impl Mul<Point> for Mat4 {
         }
     }
 }
-
 
 impl Mul<Vector> for Mat4 {
     type Output = Vector;

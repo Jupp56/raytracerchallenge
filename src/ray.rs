@@ -1,4 +1,7 @@
-use crate::{matrix::Mat4, tuple::{Point, Vector}};
+use crate::{
+    matrix::Mat4,
+    tuple::{Point, Vector},
+};
 
 #[derive(Debug)]
 pub struct Ray {
@@ -24,7 +27,11 @@ impl Ray {
 
 #[cfg(test)]
 mod ray_tests {
-    use crate::{matrix::Mat4, ray::Ray, tuple::{Point, Vector}};
+    use crate::{
+        matrix::Mat4,
+        ray::Ray,
+        tuple::{Point, Vector},
+    };
 
     #[test]
     fn create_and_query() {

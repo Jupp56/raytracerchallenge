@@ -1,10 +1,10 @@
 use std::fs::File;
 use std::io::Write;
 
+use raytracerchallenge::canvas::Canvas;
 use raytracerchallenge::color::Color;
 use raytracerchallenge::ppm::write_to_ppm;
 use raytracerchallenge::tuple::{Point, Vector};
-use raytracerchallenge::canvas::Canvas;
 
 #[derive(Debug)]
 struct Projectile {

@@ -57,7 +57,6 @@ impl Vector {
         (self.x.powi(2) + self.y.powi(2) + self.z.powi(2)).sqrt()
     }
 
-    
     pub fn reflect(&self, p: Vector) -> Vector {
         *self - p * 2.0 * self.dot(p)
     }
@@ -72,7 +71,6 @@ impl Point {
         }
     }
 }
-
 
 impl PartialEq for Point {
     fn eq(&self, other: &Self) -> bool {
@@ -177,14 +175,12 @@ mod tuple_tests {
         assert_eq!(a.z, 3.1);
     }
 
-
     #[test]
     fn test_new_vector() {
         let a = Vector::new(4.3, -4.2, 3.1);
         assert_eq!(a.x, 4.3);
         assert_eq!(a.y, -4.2);
         assert_eq!(a.z, 3.1);
-
     }
 
     #[test]

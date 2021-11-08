@@ -6,8 +6,8 @@ use raytracerchallenge::canvas::Canvas;
 use raytracerchallenge::color::Color;
 use raytracerchallenge::intersection::{hit, Intersect};
 use raytracerchallenge::ppm::write_to_ppm;
-use raytracerchallenge::shapes::Sphere;
 use raytracerchallenge::ray::Ray;
+use raytracerchallenge::shapes::Sphere;
 use raytracerchallenge::tuple::{Point, Vector};
 
 fn main() {

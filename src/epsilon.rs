@@ -8,7 +8,6 @@ pub fn epsilon_equal(x: f64, y: f64) -> bool {
 mod equal_tests {
     use crate::epsilon::epsilon_equal;
 
-
     #[test]
     fn test_epsilon_equal() {
         assert!(epsilon_equal(1.0f64, 1.00000000001f64));

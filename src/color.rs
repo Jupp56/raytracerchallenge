@@ -5,21 +5,20 @@ use crate::epsilon::epsilon_equal;
 pub const BLACK: Color = Color {
     red: 0.0,
     green: 0.0,
-    blue: 0.0
+    blue: 0.0,
 };
-
 
 pub const WHITE: Color = Color {
     red: 1.0,
     green: 1.0,
-    blue: 1.0
+    blue: 1.0,
 };
 
 #[derive(Copy, Clone, Debug)]
 pub struct Color {
     pub red: f64,
     pub green: f64,
-    pub blue: f64
+    pub blue: f64,
 }
 
 impl Color {
@@ -27,14 +26,16 @@ impl Color {
         Self {
             red: red.into(),
             green: green.into(),
-            blue: blue.into()
+            blue: blue.into(),
         }
     }
 }
 
 impl PartialEq for Color {
     fn eq(&self, other: &Self) -> bool {
-        epsilon_equal(self.red, other.red) && epsilon_equal(self.green, other.green) && epsilon_equal(self.blue, other.blue)
+        epsilon_equal(self.red, other.red)
+            && epsilon_equal(self.green, other.green)
+            && epsilon_equal(self.blue, other.blue)
     }
 }
 
@@ -45,7 +46,7 @@ impl Add for Color {
         Self {
             red: self.red + rhs.red,
             green: self.green + rhs.green,
-            blue: self.blue + rhs.blue
+            blue: self.blue + rhs.blue,
         }
     }
 }
@@ -57,7 +58,7 @@ impl Sub for Color {
         Self {
             red: self.red - rhs.red,
             green: self.green - rhs.green,
-            blue: self.blue - rhs.blue
+            blue: self.blue - rhs.blue,
         }
     }
 }
@@ -69,7 +70,7 @@ impl Mul<f64> for Color {
         Color {
             red: self.red * rhs,
             green: self.green * rhs,
-            blue: self.blue * rhs
+            blue: self.blue * rhs,
         }
     }
 }
@@ -81,7 +82,7 @@ impl Mul for Color {
         Self {
             red: self.red * rhs.red,
             green: self.green * rhs.green,
-            blue: self.blue * rhs.blue
+            blue: self.blue * rhs.blue,
         }
     }
 }
@@ -111,7 +112,7 @@ mod color_tests {
         let c2 = Color::new(0.7, 0.1, 0.25);
         let reference = Color::new(1.6, 0.7, 1.0);
         assert_eq!(c1 + c2, reference);
-    }   
+    }
 
     #[test]
     fn sub() {

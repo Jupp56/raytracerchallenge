@@ -1,8 +1,19 @@
-use std::time::{Instant};
-use std::{f64::consts::PI, fs::File};
 use std::io::Write;
+use std::time::Instant;
+use std::{f64::consts::PI, fs::File};
 
-use raytracerchallenge::{camera::Camera, color::{Color, WHITE}, light::PointLight, material::Material, matrix::Mat4, object::Object, ppm::write_to_ppm, shapes::Sphere, tuple::{Point, Vector}, world::World};
+use raytracerchallenge::{
+    camera::Camera,
+    color::{Color, WHITE},
+    light::PointLight,
+    material::Material,
+    matrix::Mat4,
+    object::Object,
+    ppm::write_to_ppm,
+    shapes::Sphere,
+    tuple::{Point, Vector},
+    world::World,
+};
 
 fn main() {
     let mut floor = Sphere::new();
@@ -69,7 +80,6 @@ fn main() {
 
     let light = PointLight::new(Point::new(-10, 10, -10), WHITE);
     let light2 = PointLight::new(Point::new(10, 5, -10), Color::new(0.2, 0.2, 0.2));
-     
 
     world.add_light(light);
     world.add_light(light2);
@@ -88,7 +98,14 @@ fn main() {
 
     let end_time = start_time.elapsed().as_millis();
 
-    println!("Rendered image with {} objects at {} x {} (={}) pixels in {} milliseconds.", world.objects().len(), camera.hsize, camera.vsize, camera.hsize  * camera.vsize, end_time);
+    println!(
+        "Rendered image with {} objects at {} x {} (={}) pixels in {} milliseconds.",
+        world.objects().len(),
+        camera.hsize,
+        camera.vsize,
+        camera.hsize * camera.vsize,
+        end_time
+    );
 
     let ppm = write_to_ppm(canvas);
 

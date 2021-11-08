@@ -127,10 +127,13 @@ impl<'a> World {
 
 fn get_color_by_object(comps: &PreparedComputations, light: &PointLight, in_shadow: bool) -> Color {
     match comps.object {
-        ReferenceObject::Sphere(s) => {
-            s.material
-                .lighting(light, comps.over_point, comps.eyev, comps.normalv, in_shadow)
-        }
+        ReferenceObject::Sphere(s) => s.material.lighting(
+            light,
+            comps.over_point,
+            comps.eyev,
+            comps.normalv,
+            in_shadow,
+        ),
     }
 }
 
@@ -250,10 +253,7 @@ mod world_tests {
                 s.material.color
             }
         };
-        let r = Ray::new(
-            Point::new(0.0, 0.0, 0.75),
-            Vector::new(0.0, 0.0, -1.0),
-        );
+        let r = Ray::new(Point::new(0.0, 0.0, 0.75), Vector::new(0.0, 0.0, -1.0));
         let c = w.color_at(&r);
         assert_eq!(c, inner_color);
     }

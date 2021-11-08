@@ -1,4 +1,10 @@
-use crate::{canvas::{Canvas, CanvasError}, matrix::{Mat4, IDENTITY_MATRIX_4}, ray::Ray, tuple::{Point, Vector}, world::World};
+use crate::{
+    canvas::{Canvas, CanvasError},
+    matrix::{Mat4, IDENTITY_MATRIX_4},
+    ray::Ray,
+    tuple::{Point, Vector},
+    world::World,
+};
 
 pub struct Camera {
     pub hsize: usize,
@@ -63,7 +69,7 @@ impl Camera {
         let forward = (to - from).normalized();
         up.normalize();
         let left = forward.cross(up);
-    
+
         let true_up = left.cross(forward);
         let orientation = Mat4::new([
             [left.x, left.y, left.z, 0.0],
@@ -92,7 +98,11 @@ impl Camera {
 
 #[cfg(test)]
 mod view_transformation_tests {
-    use crate::{camera::Camera, matrix::{Mat4, IDENTITY_MATRIX_4}, tuple::{Point, Vector}};
+    use crate::{
+        camera::Camera,
+        matrix::{Mat4, IDENTITY_MATRIX_4},
+        tuple::{Point, Vector},
+    };
 
     #[test]
     fn default_matrix() {
@@ -143,7 +153,14 @@ mod view_transformation_tests {
 mod camera_tests {
     use std::f64::consts::PI;
 
-    use crate::{camera::Camera, color::Color, epsilon::epsilon_equal, matrix::{Mat4, IDENTITY_MATRIX_4}, tuple::{Point, Vector}, world::World};
+    use crate::{
+        camera::Camera,
+        color::Color,
+        epsilon::epsilon_equal,
+        matrix::{Mat4, IDENTITY_MATRIX_4},
+        tuple::{Point, Vector},
+        world::World,
+    };
 
     #[test]
     fn new() {
@@ -197,12 +214,15 @@ mod camera_tests {
     #[test]
     fn render() {
         let w = World::test_world();
-        let mut c = Camera::new(11, 11, PI/2.);
+        let mut c = Camera::new(11, 11, PI / 2.);
         let from = Point::new(0, 0, -5);
-        let to= Point::new(0,0,0);
+        let to = Point::new(0, 0, 0);
         let up = Vector::new(0, 1, 0);
-        c.set_transform(Camera::view_transform(from,to,up));
+        c.set_transform(Camera::view_transform(from, to, up));
         let image = c.render(&w).unwrap();
-        assert_eq!(image.pixel_at(5,5).unwrap(), Color::new(0.38066, 0.47583, 0.2855));
+        assert_eq!(
+            image.pixel_at(5, 5).unwrap(),
+            Color::new(0.38066, 0.47583, 0.2855)
+        );
     }
 }

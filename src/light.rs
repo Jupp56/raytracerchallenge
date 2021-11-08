@@ -3,14 +3,14 @@ use crate::{color::Color, tuple::Point};
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PointLight {
     pub position: Point,
-    pub intensity: Color
+    pub intensity: Color,
 }
 
-impl PointLight{
+impl PointLight {
     pub fn new(position: Point, intensity: Color) -> Self {
         Self {
             position,
-            intensity
+            intensity,
         }
     }
 }
@@ -21,7 +21,7 @@ pub mod point_light_tests {
 
     #[test]
     fn instantiate() {
-        let intensity = Color::new(1,1,1);
+        let intensity = Color::new(1, 1, 1);
         let position = Point::new(0, 0, 0);
         let light = PointLight::new(position, intensity);
         assert_eq!(light.intensity, intensity);

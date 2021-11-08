@@ -88,7 +88,7 @@ mod ppm_tests {
     #[test]
     fn newline_70_chars() {
         let color: Color = Color::new(1., 0.8, 0.6);
-        let c = Canvas::new_with_color(10,2,color);
+        let c = Canvas::new_with_color(10, 2, color);
         let ppm: String = write_to_ppm(c);
         let reference = "255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204 \n153 255 204 153 255 204 153 255 204 153 255 204 153 \n255 204 153 255 204 153 255 204 153 255 204 153 255 204 153 255 204 \n153 255 204 153 255 204 153 255 204 153 255 204 153";
         assert!(ppm.contains(reference));
@@ -97,7 +97,7 @@ mod ppm_tests {
     #[test]
     fn end_is_newline() {
         let color: Color = Color::new(1., 0.8, 0.6);
-        let c = Canvas::new_with_color(10,2,color);
+        let c = Canvas::new_with_color(10, 2, color);
         let ppm: String = write_to_ppm(c);
         assert!(ppm.ends_with('\n'));
     }
