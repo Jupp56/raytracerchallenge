@@ -16,21 +16,14 @@ pub struct World {
 }
 
 impl<'a> World {
-    pub fn new() -> Self {
-        Self {
-            objects: Vec::new(),
-            lights: Vec::new(),
-        }
-    }
-
     pub fn test_world() -> Self {
         let color_s1 = Color::new(0.8, 1.0, 0.6);
         let material_s1 = Material::new(color_s1, 0.1, 0.7, 0.2, 200);
-        let mut s1 = Sphere::new();
+        let mut s1 = Sphere::default();
         s1.material = material_s1;
 
         let transform_s2 = Mat4::new_scaling(0.5, 0.5, 0.5);
-        let mut s2 = Sphere::new();
+        let mut s2 = Sphere::default();
         s2.set_transformation(transform_s2);
 
         let objects = vec![Object::Sphere(s1), Object::Sphere(s2)];
@@ -61,10 +54,10 @@ impl<'a> World {
         match lights.next() {
             Some(light) => {
                 let in_shadow = self.in_shadow(light, &comps.over_point);
-                let mut color = get_color_by_object(&comps, light, in_shadow);
+                let mut color = get_color_by_object(comps, light, in_shadow);
                 for light in lights {
                     let in_shadow = self.in_shadow(light, &comps.over_point);
-                    color = color + get_color_by_object(&comps, light, in_shadow)
+                    color = color + get_color_by_object(comps, light, in_shadow)
                 }
                 color
             }
@@ -125,6 +118,15 @@ impl<'a> World {
     }
 }
 
+impl Default for World {
+    fn default() -> Self {
+        Self {
+            objects: Default::default(),
+            lights: Default::default(),
+        }
+    }
+}
+
 fn get_color_by_object(comps: &PreparedComputations, light: &PointLight, in_shadow: bool) -> Color {
     match comps.object {
         ReferenceObject::Sphere(s) => s.material.lighting(
@@ -155,7 +157,7 @@ mod world_tests {
 
     #[test]
     fn new() {
-        let world = World::new();
+        let world = World::default();
         assert_eq!(world.objects.len(), 0);
         assert_eq!(world.lights.len(), 0);
     }
@@ -165,13 +167,13 @@ mod world_tests {
         let w = World::test_world();
 
         let light = PointLight::new(Point::new(-10, 10, -10), Color::new(1, 1, 1));
-        let mut s = Sphere::new();
+        let mut s = Sphere::default();
         let mut mat = Material::default();
         mat.color = Color::new(0.8, 1.0, 0.6);
         mat.diffuse = 0.7;
         mat.specular = 0.2;
         s.material = mat;
-        let mut s2 = Sphere::new();
+        let mut s2 = Sphere::default();
         let transf = Mat4::new_scaling(0.5, 0.5, 0.5);
         s2.set_transformation(transf);
 
@@ -260,8 +262,8 @@ mod world_tests {
 
     #[test]
     fn add_object() {
-        let mut w = World::new();
-        let s = Object::Sphere(Sphere::new());
+        let mut w = World::default();
+        let s = Object::Sphere(Sphere::default());
         w.add_object(s);
         assert_eq!(w.objects.len(), 1);
         assert_eq!(w.objects.first().unwrap(), &s);
@@ -269,10 +271,10 @@ mod world_tests {
 
     #[test]
     fn add_objects() {
-        let mut w = World::new();
+        let mut w = World::default();
         assert_eq!(w.objects.len(), 0);
-        let s = Object::Sphere(Sphere::new());
-        let s2 = Object::Sphere(Sphere::new());
+        let s = Object::Sphere(Sphere::default());
+        let s2 = Object::Sphere(Sphere::default());
 
         w.add_objects(&mut vec![s, s2]);
         assert_eq!(w.objects.len(), 2);
@@ -280,7 +282,7 @@ mod world_tests {
 
     #[test]
     fn add_light() {
-        let mut w = World::new();
+        let mut w = World::default();
         assert_eq!(w.lights.len(), 0);
 
         let l = PointLight::new(Point::new(0, 0, 0), WHITE);
@@ -290,7 +292,7 @@ mod world_tests {
 
     #[test]
     fn add_lights() {
-        let mut w = World::new();
+        let mut w = World::default();
         assert_eq!(w.lights.len(), 0);
 
         let l = PointLight::new(Point::new(0, 0, 0), WHITE);
@@ -346,13 +348,13 @@ mod world_tests {
 
     #[test]
     fn shade_hit_shadowed() {
-        let mut w = World::new();
+        let mut w = World::default();
         w.add_light(PointLight::new(Point::new(0, 0, -10), WHITE));
 
-        let s1 = Sphere::new();
+        let s1 = Sphere::default();
         w.add_object(Object::Sphere(s1));
 
-        let mut s2 = Sphere::new();
+        let mut s2 = Sphere::default();
         s2.set_transformation(Mat4::new_translation(0, 0, 10));
         w.add_object(Object::Sphere(s2));
 

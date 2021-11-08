@@ -27,7 +27,7 @@ pub fn cast() -> Canvas {
 
     let mut c = Canvas::new_with_color(resolution.0, resolution.1, Color::new(0.0, 0.0, 0.0));
     let start_point = Point::new(0, 0, -5);
-    let mut sphere = Sphere::new();
+    let mut sphere = Sphere::default();
     sphere.material = Material::default();
     sphere.material.color = Color::new(0.2, 0.6, 0.2);
     sphere.material.shininess = 70;
@@ -49,22 +49,19 @@ pub fn cast() -> Canvas {
             let ray = Ray::new(start_point, direction);
             let mut intersections = Vec::new();
             sphere.intersect(&ray, &mut intersections);
-            match hit(intersections) {
-                Some(intersection) => {
-                    let object = match intersection.object {
-                        raytracerchallenge::object::ReferenceObject::Sphere(s) => s,
-                    };
-                    let point = ray.position(intersection.t);
-                    let normal = object.normal_at(point);
-                    let eye = -ray.direction;
 
-                    let color = object.material.lighting(&light, point, eye, normal, false);
+            if let Some(intersection) = hit(intersections) {
+                let raytracerchallenge::object::ReferenceObject::Sphere(object) =
+                    intersection.object;
+                let point = ray.position(intersection.t);
+                let normal = object.normal_at(point);
 
-                    c.write_pixel(i, resolution.1 - j, color).unwrap();
-                    //println!("hit!")
-                }
-                None => (),
-            };
+                let eye = -ray.direction;
+
+                let color = object.material.lighting(&light, point, eye, normal, false);
+
+                c.write_pixel(i, resolution.1 - j, color).unwrap();
+            }
         }
     }
     c

@@ -13,14 +13,14 @@ use raytracerchallenge::{
 };
 
 fn main() {
-    let mut floor = Sphere::new();
+    let mut floor = Sphere::default();
     floor.set_transformation(Mat4::new_scaling(10.0, 0.01, 10.0));
 
     floor.material = Material::default();
     floor.material.color = Color::new(1.0, 0.9, 0.9);
     floor.material.specular = 0.0;
 
-    let mut left_wall = Sphere::new();
+    let mut left_wall = Sphere::default();
     left_wall.set_transformation(
         Mat4::new_translation(0, 0, 5)
             * Mat4::new_rotation_y(-PI / 4.0)
@@ -29,7 +29,7 @@ fn main() {
     );
     left_wall.material = floor.material;
 
-    let mut right_wall = Sphere::new();
+    let mut right_wall = Sphere::default();
     right_wall.set_transformation(
         Mat4::new_translation(0, 0, 5)
             * Mat4::new_rotation_y(PI / 4.0)
@@ -38,14 +38,14 @@ fn main() {
     );
     right_wall.material = floor.material;
 
-    let mut middle = Sphere::new();
+    let mut middle = Sphere::default();
     middle.set_transformation(Mat4::new_translation(-0.5, 1.0, 0.5));
     middle.material = Material::default();
     middle.material.color = Color::new(0.1, 1.0, 0.5);
     middle.material.diffuse = 0.7;
     middle.material.specular = 0.3;
 
-    let mut right = Sphere::new();
+    let mut right = Sphere::default();
     right.set_transformation(
         Mat4::new_translation(1.5, 0.5, -0.5) * Mat4::new_scaling(0.5, 0.5, 0.5),
     );
@@ -54,7 +54,7 @@ fn main() {
     right.material.diffuse = 0.7;
     right.material.specular = 0.3;
 
-    let mut left = Sphere::new();
+    let mut left = Sphere::default();
     left.set_transformation(
         Mat4::new_translation(-1.5, 0.33, -0.75) * Mat4::new_scaling(0.33, 0.33, 0.33),
     );
@@ -63,7 +63,7 @@ fn main() {
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
 
-    let mut world = World::new();
+    let mut world = World::default();
 
     world.add_objects(&mut vec![
         Object::Sphere(floor),

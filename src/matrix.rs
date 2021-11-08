@@ -73,7 +73,8 @@ impl<const SIZE: usize> PartialEq for Matrix<SIZE> {
                 }
             }
         }
-        return true;
+
+        true
     }
 }
 
@@ -124,6 +125,12 @@ impl Mul<Vector> for Mat4 {
             y: self[1][0] * rhs.x + self[1][1] * rhs.y + self[1][2] * rhs.z,
             z: self[2][0] * rhs.x + self[2][1] * rhs.y + self[2][2] * rhs.z,
         }
+    }
+}
+
+impl Default for Mat4 {
+    fn default() -> Self {
+        IDENTITY_MATRIX_4
     }
 }
 

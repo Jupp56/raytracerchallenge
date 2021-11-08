@@ -22,7 +22,7 @@ fn main() {
 pub fn cast() -> Canvas {
     let mut c = Canvas::new_with_color(1000, 1000, Color::new(1.0, 1.0, 1.0));
     let start_point = Point::new(0, 0, -5);
-    let sphere = Sphere::new();
+    let sphere = Sphere::default();
     //let transform = Mat4::new_scaling(1.0, 0.5, 1.0);
     //sphere.set_transformation(transform);
     for i in 0_usize..1000_usize {
@@ -35,12 +35,8 @@ pub fn cast() -> Canvas {
             let ray = Ray::new(start_point, direction);
             let mut intersections = Vec::new();
             sphere.intersect(&ray, &mut intersections);
-            match hit(intersections) {
-                Some(_intersection) => {
-                    c.write_pixel(i, j, Color::new(1.0, 0.0, 0.0)).unwrap();
-                    //println!("hit!")
-                }
-                None => (),
+            if let Some(_intersection) = hit(intersections) {
+                c.write_pixel(i, j, Color::new(1.0, 0.0, 0.0)).unwrap();
             };
         }
     }

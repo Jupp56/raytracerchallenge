@@ -45,11 +45,10 @@ pub fn main() {
         tick(&env, &mut p);
         println!("x: {}, y: {}", p.position.x, p.position.y);
         let ypos = 550_usize.checked_sub(p.position.y as usize);
-        match ypos {
-            Some(pos) => {
-                let _ = canvas.write_pixel(p.position.x as usize, pos, Color::new(1., 0., 0.));
-            }
-            None => (),
+        if let Some(pos) = ypos {
+            canvas
+                .write_pixel(p.position.x as usize, pos, Color::new(1., 0., 0.))
+                .unwrap();
         }
     }
 

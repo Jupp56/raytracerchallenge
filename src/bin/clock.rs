@@ -13,11 +13,11 @@ fn main() {
         points.push(Point::new(30, 0, 0));
     }
 
-    for i in 0..12 {
+    for (i, point) in points.iter_mut().enumerate() {
         let rotation: f64 = i as f64 * PI / 6.;
         println!("rotation: {}", rotation);
         let rot_matrix = Mat4::new_rotation_z(rotation);
-        points[i] = rot_matrix * points[i];
+        *point = rot_matrix * *point;
     }
 
     for p in points {

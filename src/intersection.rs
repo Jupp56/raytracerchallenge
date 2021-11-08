@@ -97,7 +97,7 @@ mod intersection_tests {
 
     #[test]
     fn intersection() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let so = ReferenceObject::Sphere(&s);
         let i = Intersection::new(3.5, so);
         assert_eq!(i.t, 3.5);
@@ -106,7 +106,7 @@ mod intersection_tests {
 
     #[test]
     fn intersections() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let so = ReferenceObject::Sphere(&s);
         let i1 = Intersection::new(1, so);
         let i2 = Intersection::new(2, so);
@@ -133,7 +133,7 @@ mod hit_tests {
 
     #[test]
     fn positive_t() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let so = ReferenceObject::Sphere(&s);
         let i1 = Intersection::new(1, so);
         let i2 = Intersection::new(2, so);
@@ -144,7 +144,7 @@ mod hit_tests {
 
     #[test]
     fn some_negative_t() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let so = ReferenceObject::Sphere(&s);
         let i1 = Intersection::new(-1, so);
         let i2 = Intersection::new(1, so);
@@ -155,7 +155,7 @@ mod hit_tests {
 
     #[test]
     fn negative_t() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let so = ReferenceObject::Sphere(&s);
         let i1 = Intersection::new(-2, so);
         let i2 = Intersection::new(-1, so);
@@ -166,7 +166,7 @@ mod hit_tests {
 
     #[test]
     fn lowest_nonnegative() {
-        let s = Sphere::new();
+        let s = Sphere::default();
         let so = ReferenceObject::Sphere(&s);
         let i1 = Intersection::new(5, so);
         let i2 = Intersection::new(7, so);
@@ -180,7 +180,7 @@ mod hit_tests {
     #[test]
     fn precompute_state() {
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
-        let shape = Sphere::new();
+        let shape = Sphere::default();
         let i = Intersection::new(4.0, object::ReferenceObject::Sphere(&shape));
         let comps = i.prepare_computations(&r);
         assert_eq!(comps.t, i.t);
@@ -193,7 +193,7 @@ mod hit_tests {
     #[test]
     fn precompute_not_inside() {
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
-        let sphere = Sphere::new();
+        let sphere = Sphere::default();
         let shape = ReferenceObject::Sphere(&sphere);
         let i = Intersection::new(4.0, shape);
         let comps = i.prepare_computations(&r);
@@ -202,7 +202,7 @@ mod hit_tests {
     #[test]
     fn precompute_inside() {
         let r = Ray::new(Point::new(0, 0, 0), Vector::new(0, 0, 1));
-        let sphere = Sphere::new();
+        let sphere = Sphere::default();
         let shape = ReferenceObject::Sphere(&sphere);
         let i = Intersection::new(1.0, shape);
         let comps = i.prepare_computations(&r);
@@ -215,7 +215,7 @@ mod hit_tests {
     #[test]
     fn precompute_over_z() {
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
-        let mut shape = Sphere::new();
+        let mut shape = Sphere::default();
         shape.set_transformation(Mat4::new_translation(0, 0, 1));
         let i = Intersection::new(5, ReferenceObject::Sphere(&shape));
         let comps = i.prepare_computations(&r);
