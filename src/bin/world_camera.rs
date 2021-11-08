@@ -2,6 +2,7 @@ use std::io::Write;
 use std::time::Instant;
 use std::{f64::consts::PI, fs::File};
 
+use raytracerchallenge::material::Shininess;
 use raytracerchallenge::{
     camera::Camera,
     color::{Color, WHITE},
@@ -10,7 +11,7 @@ use raytracerchallenge::{
     matrix::Mat4,
     object::Object,
     ppm::write_to_ppm,
-    shapes::Sphere,
+    shapes::sphere::Sphere,
     tuple::{Point, Vector},
     world::World,
 };
@@ -65,7 +66,7 @@ fn main() {
     left.material.color = Color::new(1.0, 0.8, 0.1);
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
-    //left.material.shininess = 0.5;
+    left.material.shininess = 200 as Shininess;
 
     let mut world = World::default();
 

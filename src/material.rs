@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[cfg(feature = "shininess_as_float")]
-pub type Shininesss = f64;
+pub type Shininess = f64;
 
 #[cfg(not(feature = "shininess_as_float"))]
 pub type Shininess = usize;

@@ -6,6 +6,7 @@ use crate::{
     world::World,
 };
 
+#[derive(Copy, Clone, Debug)]
 pub struct Camera {
     pub hsize: usize,
     pub vsize: usize,

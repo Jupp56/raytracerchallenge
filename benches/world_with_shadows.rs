@@ -1,3 +1,5 @@
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+
 use std::f64::consts::PI;
 
 use raytracerchallenge::{
@@ -12,7 +14,7 @@ use raytracerchallenge::{
     world::World,
 };
 
-fn main() {
+fn setup_world() -> World {
     let mut floor = Sphere::default();
     floor.set_transformation(Mat4::new_scaling(10.0, 0.01, 10.0));
 
@@ -80,6 +82,10 @@ fn main() {
     world.add_light(light);
     world.add_light(light2);
 
+    world
+}
+
+fn setup_camera() -> Camera {
     let mut camera = Camera::new(1000, 500, PI / 3.0);
 
     camera.set_transform(Camera::view_transform(
@@ -88,18 +94,19 @@ fn main() {
         Vector::new(0, 1, 0),
     ));
 
-    //let start_time = Instant::now();
-
-    let _canvas = camera.render(&world).unwrap();
-
-    //let end_time = start_time.elapsed().as_millis();
-
-    //println!("Rendered image with {} objects at {} x {} (={}) pixels in {} milliseconds.", world.objects().len(), camera.hsize, camera.vsize, camera.hsize  * camera.vsize, end_time);
-    /*
-    let ppm = write_to_ppm(canvas);
-
-    let mut file = File::create("./scene-camera-4.ppm").unwrap();
-    let _ = write!(file, "{}", ppm);
-
-    */
+    camera
 }
+
+fn world_bench(world: World, camera: Camera) {
+    let _canvas = camera.render(&world).unwrap();
+}
+
+fn criterion_benchmark(c: &mut Criterion) {
+    let world = setup_world();
+    let camera = setup_camera();
+
+    c.bench_function("world", |b| b.iter(|| world_bench(black_box(world.clone()), black_box(camera.clone()))));
+}
+
+criterion_group!(benches, criterion_benchmark);
+criterion_main!(benches);

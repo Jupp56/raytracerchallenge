@@ -10,9 +10,17 @@ debug = true
 
 [dependencies]
 
-[features]
-specular_as_float = []
+[dev-dependencies]
+criterion = "~0.3"
 
-[[bin]]
-name = "world_camera"
-required-features = ["specular_as_float"]
+[[bench]]
+name = "world_with_shadows"
+harness = false
+
+[[bench]]
+name = "ray_transform"
+harness = false
+
+[features]
+shininess_as_float = []
+

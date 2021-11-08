@@ -107,6 +107,7 @@ impl<const SIZE: usize> MulAssign for Matrix<SIZE> {
 impl Mul<Point> for Mat4 {
     type Output = Point;
 
+    #[inline]
     fn mul(self, rhs: Point) -> Self::Output {
         Point {
             x: self[0][0] * rhs.x + self[0][1] * rhs.y + self[0][2] * rhs.z + self[0][3],
@@ -119,6 +120,7 @@ impl Mul<Point> for Mat4 {
 impl Mul<Vector> for Mat4 {
     type Output = Vector;
 
+    #[inline]
     fn mul(self, rhs: Vector) -> Self::Output {
         Vector {
             x: self[0][0] * rhs.x + self[0][1] * rhs.y + self[0][2] * rhs.z,

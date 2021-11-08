@@ -1,9 +1,4 @@
-use crate::{
-    epsilon::EPSILON,
-    object::ReferenceObject,
-    ray::Ray,
-    tuple::{Point, Vector},
-};
+use crate::{epsilon::EPSILON, shapes::shape::Shape, object::ReferenceObject, ray::Ray, tuple::{Point, Vector}};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Intersection<'a> {
@@ -31,9 +26,7 @@ impl<'a> Intersection<'a> {
     }
     pub fn prepare_computations(&self, r: &Ray) -> PreparedComputations {
         let point = r.position(self.t);
-        let normal = match self.object {
-            ReferenceObject::Sphere(s) => s.normal_at(point),
-        };
+        let normal = self.object.normal_at(point);
 
         let eyev = -r.direction;
 
@@ -66,10 +59,6 @@ impl<'a> PartialOrd for Intersection<'a> {
     }
 }
 
-pub trait Intersect<'a> {
-    fn intersect(&'a self, ray: &'a Ray, intersections: &mut Vec<Intersection<'a>>);
-}
-
 pub fn hit(intersections: Vec<Intersection>) -> Option<Intersection> {
     let mut lowest_non_neg_opt = None;
     for intersection in intersections {
@@ -92,7 +81,7 @@ pub fn hit(intersections: Vec<Intersection>) -> Option<Intersection> {
 #[cfg(test)]
 mod intersection_tests {
     use crate::{
-        epsilon::epsilon_equal, intersection::Intersection, object::ReferenceObject, shapes::Sphere,
+        epsilon::epsilon_equal, intersection::Intersection, object::ReferenceObject, shapes::sphere::Sphere,
     };
 
     #[test]
@@ -125,7 +114,7 @@ mod hit_tests {
         matrix::Mat4,
         object::{self, ReferenceObject},
         ray::Ray,
-        shapes::Sphere,
+        shapes::sphere::Sphere,
         tuple::{Point, Vector},
     };
 

@@ -1,15 +1,6 @@
-use crate::{
-    color::{Color, BLACK},
-    intersection::{hit, Intersect, Intersection, PreparedComputations},
-    light::PointLight,
-    material::Material,
-    matrix::Mat4,
-    object::{Object, ReferenceObject},
-    ray::Ray,
-    shapes::Sphere,
-    tuple::Point,
-};
+use crate::{color::{Color, BLACK}, intersection::{hit, Intersection, PreparedComputations}, light::PointLight, material::{Material, Shininess}, matrix::Mat4, object::{Object, ReferenceObject}, ray::Ray, shapes::shape::Shape, shapes::sphere::Sphere, tuple::Point};
 
+#[derive(Clone, Debug)]
 pub struct World {
     objects: Vec<Object>,
     lights: Vec<PointLight>,
@@ -18,7 +9,10 @@ pub struct World {
 impl<'a> World {
     pub fn test_world() -> Self {
         let color_s1 = Color::new(0.8, 1.0, 0.6);
-        let material_s1 = Material::new(color_s1, 0.1, 0.7, 0.2, 200);
+
+        let shininess: Shininess = 200_usize as Shininess;
+
+        let material_s1 = Material::new(color_s1, 0.1, 0.7, 0.2, shininess);
         let mut s1 = Sphere::default();
         s1.material = material_s1;
 
@@ -39,11 +33,7 @@ impl<'a> World {
     pub fn intersect(&'a self, r: &'a Ray) -> Vec<Intersection<'a>> {
         let mut intersections: Vec<Intersection<'a>> = Vec::new();
         for object in &self.objects {
-            match object {
-                Object::Sphere(sphere) => {
-                    sphere.intersect(r, &mut intersections);
-                }
-            }
+            object.intersect(r, &mut intersections);
         }
         intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         intersections
@@ -54,10 +44,10 @@ impl<'a> World {
         match lights.next() {
             Some(light) => {
                 let in_shadow = self.in_shadow(light, &comps.over_point);
-                let mut color = get_color_by_object(comps, light, in_shadow);
+                let mut color = comps.object.render_at(comps, light, in_shadow);
                 for light in lights {
                     let in_shadow = self.in_shadow(light, &comps.over_point);
-                    color = color + get_color_by_object(comps, light, in_shadow)
+                    color = color + comps.object.render_at(comps, light, in_shadow);
                 }
                 color
             }
@@ -150,7 +140,7 @@ mod world_tests {
         matrix::Mat4,
         object::{Object, ReferenceObject},
         ray::Ray,
-        shapes::Sphere,
+        shapes::sphere::Sphere,
         tuple::{Point, Vector},
         world::World,
     };

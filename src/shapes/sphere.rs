@@ -1,9 +1,10 @@
 use crate::{
-    intersection::{Intersect, Intersection},
+    intersection::Intersection,
     material::Material,
     matrix::{Mat4, IDENTITY_MATRIX_4},
     object::ReferenceObject,
     ray::Ray,
+    shapes::shape::Shape,
     tuple::{Point, Vector},
 };
 
@@ -15,27 +16,15 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn transformation(&self) -> Mat4 {
-        self.transformation_matrix
-    }
-    pub fn inverted_transformation(&self) -> Mat4 {
-        self.inverted_transformation_matrix
-    }
     pub fn set_transformation(&mut self, m: Mat4) {
         self.transformation_matrix = m;
         self.inverted_transformation_matrix = m.inverse();
     }
-    pub fn normal_at(&self, p: Point) -> Vector {
-        let p_object_space = self.inverted_transformation() * p;
-        let res_object_space = (p_object_space - Point::new(0, 0, 0)).normalized();
-        let res_world_space = self.inverted_transformation().transpose() * res_object_space;
-        res_world_space.normalized()
-    }
+
 }
 
-impl<'a> Intersect<'a> for Sphere {
-    fn intersect(&'a self, ray: &'a Ray, intersections: &mut Vec<Intersection<'a>>) {
-        let ray = ray.transform(self.inverted_transformation_matrix);
+impl<'a> Shape<'a> for Sphere {
+    fn local_intersect(&'a self, ray: Ray, intersections: &mut Vec<Intersection<'a>>) {
         let sphere_to_ray = ray.origin - Point::new(0, 0, 0);
         let a = ray.direction.dot(ray.direction);
         let b = 2. * ray.direction.dot(sphere_to_ray);
@@ -55,6 +44,25 @@ impl<'a> Intersect<'a> for Sphere {
         intersections.push(i1);
         intersections.push(i2);
     }
+
+    fn material(&self) -> Material {
+        self.material
+    }
+
+    fn transformation_matrix(&self) -> Mat4 {
+        self.transformation_matrix
+    }
+
+    fn normal_at(&self, p: Point) -> Vector {
+        let p_object_space = self.inverse_transformation_matrix() * p;
+        let res_object_space = (p_object_space - Point::new(0, 0, 0)).normalized();
+        let res_world_space = self.inverse_transformation_matrix().transpose() * res_object_space;
+        res_world_space.normalized()
+    }
+
+    fn inverse_transformation_matrix(&self) -> Mat4 {
+        self.inverted_transformation_matrix
+    }
 }
 
 impl Default for Sphere {
@@ -71,17 +79,23 @@ impl Default for Sphere {
 mod sphere_tests {
     use std::f64::consts::PI;
 
-    use crate::{
-        epsilon::epsilon_equal,
-        intersection::{Intersect, Intersection},
-        material::Material,
-        matrix::{Mat4, IDENTITY_MATRIX_4},
-        object::ReferenceObject,
-        ray::Ray,
-        tuple::{Point, Vector},
-    };
+    use crate::{epsilon::epsilon_equal, intersection::Intersection, material::Material, matrix::{Mat4, IDENTITY_MATRIX_4}, object::ReferenceObject, ray::Ray, shapes::shape::Shape, tuple::{Point, Vector}};
 
     use super::Sphere;
+
+    #[test]
+    fn ray_sphere_local_intersection() {
+        let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
+        let s = Sphere::default();
+        let reference = vec![
+            Intersection::new(4.0, ReferenceObject::Sphere(&s)),
+            Intersection::new(6.0, ReferenceObject::Sphere(&s)),
+        ];
+        let mut xs = Vec::new();
+        let r_os = s.transform_ray_to_object_space(&r);
+        s.local_intersect(r_os, &mut xs);
+        assert_eq!(xs, reference);
+    }
 
     #[test]
     fn ray_sphere_intersection() {
@@ -97,7 +111,7 @@ mod sphere_tests {
     }
 
     #[test]
-    fn intersect_tanget() {
+    fn intersect_target() {
         let r = Ray::new(Point::new(0, 1, -5), Vector::new(0, 0, 1));
         let s = Sphere::default();
         let reference = vec![

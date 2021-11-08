@@ -3,7 +3,7 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Ray {
     pub origin: Point,
     pub direction: Vector,
@@ -17,7 +17,8 @@ impl Ray {
         let t: f64 = t.into();
         self.origin + self.direction * t
     }
-    pub fn transform(&self, m: Mat4) -> Self {
+    #[inline]
+    pub fn transformed(&self, m: Mat4) -> Self {
         Self {
             origin: m * self.origin,
             direction: m * self.direction,
@@ -60,7 +61,7 @@ mod ray_tests {
     fn translate() {
         let r = Ray::new(Point::new(1, 2, 3), Vector::new(0, 1, 0));
         let m = Mat4::new_translation(3, 4, 5);
-        let r2 = r.transform(m);
+        let r2 = r.transformed(m);
         assert_eq!(r2.origin, Point::new(4, 6, 8));
         assert_eq!(r2.direction, Vector::new(0, 1, 0));
     }
@@ -69,7 +70,7 @@ mod ray_tests {
     fn scale() {
         let r = Ray::new(Point::new(1, 2, 3), Vector::new(0, 1, 0));
         let m = Mat4::new_scaling(2, 3, 4);
-        let r2 = r.transform(m);
+        let r2 = r.transformed(m);
         assert_eq!(r2.origin, Point::new(2, 6, 12));
         assert_eq!(r2.direction, Vector::new(0, 3, 0));
     }
