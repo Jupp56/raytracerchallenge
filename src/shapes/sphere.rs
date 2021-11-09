@@ -1,8 +1,9 @@
+use std::any::Any;
+
 use crate::{
     intersection::Intersection,
     material::Material,
     matrix::{Mat4, IDENTITY_MATRIX_4},
-    object::ReferenceObject,
     ray::Ray,
     shapes::shape::Shape,
     tuple::{Point, Vector},
@@ -22,8 +23,8 @@ impl Sphere {
     }
 }
 
-impl<'a> Shape<'a> for Sphere {
-    fn local_intersect(&'a self, ray: Ray, intersections: &mut Vec<Intersection<'a>>) {
+impl Shape for Sphere {
+    fn local_intersect<'a>(&'a self, ray: &Ray, intersections: &mut Vec<Intersection<'a>>) {
         let sphere_to_ray = ray.origin - Point::new(0, 0, 0);
         let a = ray.direction.dot(ray.direction);
         let b = 2. * ray.direction.dot(sphere_to_ray);
@@ -37,8 +38,8 @@ impl<'a> Shape<'a> for Sphere {
         let t1 = (-b - discriminant.sqrt()) / (2. * a);
         let t2 = (-b + discriminant.sqrt()) / (2. * a);
 
-        let i1 = Intersection::new(t1, ReferenceObject::Sphere(self));
-        let i2 = Intersection::new(t2, ReferenceObject::Sphere(self));
+        let i1 = Intersection::new(t1, self);
+        let i2 = Intersection::new(t2, self);
 
         intersections.push(i1);
         intersections.push(i2);
@@ -60,6 +61,17 @@ impl<'a> Shape<'a> for Sphere {
     fn inverse_transformation_matrix(&self) -> Mat4 {
         self.inverted_transformation_matrix
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn box_eq(&self, other: &dyn Any) -> bool {
+        other.downcast_ref::<Self>().map_or(false, |a| self == a)
+    }
+
+    fn material_mut(&mut self) -> &mut Material {
+        &mut self.material
+    }
 }
 
 impl Default for Sphere {
@@ -79,7 +91,6 @@ mod sphere_tests {
         intersection::Intersection,
         material::Material,
         matrix::IDENTITY_MATRIX_4,
-        object::ReferenceObject,
         ray::Ray,
         shapes::shape::Shape,
         tuple::{Point, Vector},
@@ -91,13 +102,10 @@ mod sphere_tests {
     fn ray_sphere_local_intersection() {
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
         let s = Sphere::default();
-        let reference = vec![
-            Intersection::new(4.0, ReferenceObject::Sphere(&s)),
-            Intersection::new(6.0, ReferenceObject::Sphere(&s)),
-        ];
+        let reference = vec![Intersection::new(4.0, &s), Intersection::new(6.0, &s)];
         let mut xs = Vec::new();
         let r_os = s.transform_ray_to_object_space(&r);
-        s.local_intersect(r_os, &mut xs);
+        s.local_intersect(&r_os, &mut xs);
         assert_eq!(xs, reference);
     }
 
@@ -105,10 +113,7 @@ mod sphere_tests {
     fn intersect_target() {
         let r = Ray::new(Point::new(0, 1, -5), Vector::new(0, 0, 1));
         let s = Sphere::default();
-        let reference = vec![
-            Intersection::new(5.0, ReferenceObject::Sphere(&s)),
-            Intersection::new(5.0, ReferenceObject::Sphere(&s)),
-        ];
+        let reference = vec![Intersection::new(5.0, &s), Intersection::new(5.0, &s)];
         let mut xs = Vec::new();
         s.intersect(&r, &mut xs);
         assert_eq!(xs, reference);
@@ -117,10 +122,7 @@ mod sphere_tests {
     fn ray_originating_inside() {
         let r = Ray::new(Point::new(0, 0, 0), Vector::new(0, 0, 1));
         let s = Sphere::default();
-        let reference = vec![
-            Intersection::new(-1, ReferenceObject::Sphere(&s)),
-            Intersection::new(1, ReferenceObject::Sphere(&s)),
-        ];
+        let reference = vec![Intersection::new(-1, &s), Intersection::new(1, &s)];
         let mut xs = Vec::new();
         s.intersect(&r, &mut xs);
         assert_eq!(xs, reference);
@@ -139,10 +141,7 @@ mod sphere_tests {
     fn ray_originating_behind() {
         let r = Ray::new(Point::new(0, 0, 5), Vector::new(0, 0, 1));
         let s = Sphere::default();
-        let reference = vec![
-            Intersection::new(-6, ReferenceObject::Sphere(&s)),
-            Intersection::new(-4, ReferenceObject::Sphere(&s)),
-        ];
+        let reference = vec![Intersection::new(-6, &s), Intersection::new(-4, &s)];
         let mut xs = Vec::new();
         s.intersect(&r, &mut xs);
         assert_eq!(xs, reference);

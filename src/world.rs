@@ -4,20 +4,19 @@ use crate::{
     light::PointLight,
     material::{Material, Shininess},
     matrix::Mat4,
-    object::Object,
     ray::Ray,
     shapes::shape::Shape,
     shapes::sphere::Sphere,
     tuple::Point,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct World {
-    objects: Vec<Object>,
+    objects: Vec<Box<dyn Shape>>,
     lights: Vec<PointLight>,
 }
 
-impl<'a> World {
+impl World {
     pub fn test_world() -> Self {
         let color_s1 = Color::new(0.8, 1.0, 0.6);
 
@@ -31,7 +30,7 @@ impl<'a> World {
         let mut s2 = Sphere::default();
         s2.set_transformation(transform_s2);
 
-        let objects = vec![Object::Sphere(s1), Object::Sphere(s2)];
+        let objects: Vec<Box<dyn Shape>> = vec![Box::new(s1), Box::new(s2)];
 
         let lights = vec![PointLight::new(
             Point::new(-10, 10, -10),
@@ -41,10 +40,10 @@ impl<'a> World {
         Self { objects, lights }
     }
 
-    pub fn intersect(&'a self, r: &'a Ray) -> Vec<Intersection<'a>> {
-        let mut intersections: Vec<Intersection<'a>> = Vec::new();
+    pub fn intersect(&self, r: &Ray) -> Vec<Intersection> {
+        let mut intersections: Vec<Intersection> = Vec::new();
         for object in &self.objects {
-            object.intersect(r, &mut intersections);
+            object.intersect(&r, &mut intersections);
         }
         intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         intersections
@@ -69,20 +68,21 @@ impl<'a> World {
     pub fn color_at(&self, r: &Ray) -> Color {
         let intersections = self.intersect(r);
         let hit = hit(intersections);
-        match hit {
+        let color = match hit {
             Some(h) => {
-                let comps = h.prepare_computations(r);
+                let comps = h.prepare_computations(&r);
                 self.shade_hit(&comps)
             }
             None => BLACK,
-        }
+        };
+        color
     }
 
-    pub fn add_object(&mut self, object: Object) {
+    pub fn add_object(&mut self, object: Box<dyn Shape>) {
         self.objects.push(object);
     }
     /// Moves objects out of the given vector into the scene
-    pub fn add_objects(&mut self, objects: &mut Vec<Object>) {
+    pub fn add_objects(&mut self, objects: &mut Vec<Box<dyn Shape>>) {
         self.objects.append(objects);
     }
 
@@ -94,7 +94,7 @@ impl<'a> World {
         self.lights.append(lights);
     }
 
-    pub fn objects(&self) -> &Vec<Object> {
+    pub fn objects(&self) -> &Vec<Box<dyn Shape>> {
         &self.objects
     }
 
@@ -137,7 +137,6 @@ mod world_tests {
         light::PointLight,
         material::Material,
         matrix::Mat4,
-        object::{Object, ReferenceObject},
         ray::Ray,
         shapes::sphere::Sphere,
         tuple::{Point, Vector},
@@ -167,8 +166,10 @@ mod world_tests {
         s2.set_transformation(transf);
 
         assert_eq!(w.lights, vec!(light));
-        assert!(w.objects.contains(&Object::Sphere(s)));
-        assert!(w.objects.contains(&Object::Sphere(s2)));
+        let ws1 = w.objects[0].as_any().downcast_ref::<Sphere>().unwrap();
+        let ws2 = w.objects[1].as_any().downcast_ref::<Sphere>().unwrap();
+        assert_eq!(ws1, &s);
+        assert_eq!(ws2, &s2);
     }
 
     #[test]
@@ -188,10 +189,8 @@ mod world_tests {
         let w = World::test_world();
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
         let shape = w.objects.first().unwrap();
-        let s = match shape {
-            Object::Sphere(s) => s,
-        };
-        let i = Intersection::new(4.0, ReferenceObject::Sphere(s));
+        let s = &**shape;
+        let i = Intersection::new(4.0, s);
         let comps = i.prepare_computations(&r);
         let c = w.shade_hit(&comps);
         assert_eq!(c, Color::new(0.38066, 0.47583, 0.2855));
@@ -205,11 +204,9 @@ mod world_tests {
             Color::new(1, 1, 1),
         )];
         let r = Ray::new(Point::new(0, 0, 0), Vector::new(0, 0, 1));
-        let shape = w.objects[1];
-        let s = match shape {
-            Object::Sphere(s) => s,
-        };
-        let i = Intersection::new(0.5, ReferenceObject::Sphere(&s));
+        let s = &*w.objects[1];
+
+        let i = Intersection::new(0.5, s);
         let comps = i.prepare_computations(&r);
         let c = w.shade_hit(&comps);
         assert_eq!(c, Color::new(0.90498, 0.90498, 0.90498));
@@ -233,17 +230,13 @@ mod world_tests {
     #[test]
     fn intersection_behind_ray() {
         let mut w = World::test_world();
-        match &mut w.objects[0] {
-            Object::Sphere(s) => {
-                s.material.ambient = 1.0;
-            }
-        }
-        let inner_color = match &mut w.objects[1] {
-            Object::Sphere(s) => {
-                s.material.ambient = 1.0;
-                s.material.color
-            }
-        };
+        let material = w.objects[0].material_mut();
+        material.ambient = 1.0;
+
+        let material = w.objects[1].material_mut();
+        material.ambient = 1.0;
+        let inner_color = material.color;
+
         let r = Ray::new(Point::new(0.0, 0.0, 0.75), Vector::new(0.0, 0.0, -1.0));
         let c = w.color_at(&r);
         assert_eq!(c, inner_color);
@@ -252,18 +245,26 @@ mod world_tests {
     #[test]
     fn add_object() {
         let mut w = World::default();
-        let s = Object::Sphere(Sphere::default());
+        let s = Box::new(Sphere::default());
         w.add_object(s);
+
+        let first = w
+            .objects
+            .first()
+            .unwrap()
+            .as_any()
+            .downcast_ref::<Sphere>()
+            .unwrap();
         assert_eq!(w.objects.len(), 1);
-        assert_eq!(w.objects.first().unwrap(), &s);
+        assert_eq!(first, &Sphere::default());
     }
 
     #[test]
     fn add_objects() {
         let mut w = World::default();
         assert_eq!(w.objects.len(), 0);
-        let s = Object::Sphere(Sphere::default());
-        let s2 = Object::Sphere(Sphere::default());
+        let s = Box::new(Sphere::default());
+        let s2 = Box::new(Sphere::default());
 
         w.add_objects(&mut vec![s, s2]);
         assert_eq!(w.objects.len(), 2);
@@ -341,18 +342,16 @@ mod world_tests {
         w.add_light(PointLight::new(Point::new(0, 0, -10), WHITE));
 
         let s1 = Sphere::default();
-        w.add_object(Object::Sphere(s1));
+        w.add_object(Box::new(s1));
 
         let mut s2 = Sphere::default();
         s2.set_transformation(Mat4::new_translation(0, 0, 10));
-        w.add_object(Object::Sphere(s2));
+        w.add_object(Box::new(s2));
 
-        let s2 = match w.objects()[1] {
-            Object::Sphere(s) => s,
-        };
+        let s2 = &*w.objects[1];
 
         let r = Ray::new(Point::new(0, 0, 5), Vector::new(0, 0, 1));
-        let i = Intersection::new(4, ReferenceObject::Sphere(&s2));
+        let i = Intersection::new(4, s2);
 
         let comps = i.prepare_computations(&r);
 

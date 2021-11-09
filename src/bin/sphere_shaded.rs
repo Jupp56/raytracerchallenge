@@ -52,8 +52,7 @@ pub fn cast() -> Canvas {
             sphere.intersect(&ray, &mut intersections);
 
             if let Some(intersection) = hit(intersections) {
-                let raytracerchallenge::object::ReferenceObject::Sphere(object) =
-                    intersection.object;
+                let object  = intersection.object.as_any().downcast_ref::<Sphere>().unwrap();
                 let point = ray.position(intersection.t);
                 let normal = object.normal_at(point);
 

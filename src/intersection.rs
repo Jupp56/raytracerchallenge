@@ -1,6 +1,5 @@
 use crate::{
     epsilon::EPSILON,
-    object::ReferenceObject,
     ray::Ray,
     shapes::shape::Shape,
     tuple::{Point, Vector},
@@ -9,13 +8,13 @@ use crate::{
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Intersection<'a> {
     pub t: f64,
-    pub object: ReferenceObject<'a>,
+    pub object: &'a dyn Shape,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct PreparedComputations<'a> {
     pub t: f64,
-    pub object: ReferenceObject<'a>,
+    pub object: &'a dyn Shape,
     pub point: Point,
     pub over_point: Point,
     pub eyev: Vector,
@@ -24,12 +23,13 @@ pub struct PreparedComputations<'a> {
 }
 
 impl<'a> Intersection<'a> {
-    pub fn new<T: Into<f64>>(t: T, object: ReferenceObject<'a>) -> Self {
+    pub fn new<T: Into<f64>>(t: T, object: &'a dyn Shape) -> Intersection<'a> {
         Self {
             t: t.into(),
             object,
         }
     }
+
     pub fn prepare_computations(&self, r: &Ray) -> PreparedComputations {
         let point = r.position(self.t);
         let normal = self.object.normal_at(point);
@@ -66,12 +66,12 @@ impl<'a> PartialOrd for Intersection<'a> {
 }
 
 pub fn hit(intersections: Vec<Intersection>) -> Option<Intersection> {
-    let mut lowest_non_neg_opt = None;
+    let mut lowest_non_neg_opt: Option<Intersection> = None;
     for intersection in intersections {
         if intersection.t < 0.0 {
             continue;
         }
-        match lowest_non_neg_opt {
+        match &mut lowest_non_neg_opt {
             None => lowest_non_neg_opt = Some(intersection),
             Some(lowest_non_neg) => {
                 if intersection.t < lowest_non_neg.t {
@@ -87,14 +87,15 @@ pub fn hit(intersections: Vec<Intersection>) -> Option<Intersection> {
 #[cfg(test)]
 mod intersection_tests {
     use crate::{
-        epsilon::epsilon_equal, intersection::Intersection, object::ReferenceObject,
-        shapes::sphere::Sphere,
+        epsilon::epsilon_equal,
+        intersection::Intersection,
+        shapes::{shape::Shape, sphere::Sphere},
     };
 
     #[test]
     fn intersection() {
         let s = Sphere::default();
-        let so = ReferenceObject::Sphere(&s);
+        let so = &s as &dyn Shape;
         let i = Intersection::new(3.5, so);
         assert_eq!(i.t, 3.5);
         assert_eq!(i.object, so);
@@ -103,7 +104,7 @@ mod intersection_tests {
     #[test]
     fn intersections() {
         let s = Sphere::default();
-        let so = ReferenceObject::Sphere(&s);
+        let so = &s as &dyn Shape;
         let i1 = Intersection::new(1, so);
         let i2 = Intersection::new(2, so);
         let xs = vec![i1, i2];
@@ -119,9 +120,8 @@ mod hit_tests {
         epsilon::EPSILON,
         intersection::hit,
         matrix::Mat4,
-        object::{self, ReferenceObject},
         ray::Ray,
-        shapes::sphere::Sphere,
+        shapes::{shape::Shape, sphere::Sphere},
         tuple::{Point, Vector},
     };
 
@@ -130,7 +130,7 @@ mod hit_tests {
     #[test]
     fn positive_t() {
         let s = Sphere::default();
-        let so = ReferenceObject::Sphere(&s);
+        let so = &s as &dyn Shape;
         let i1 = Intersection::new(1, so);
         let i2 = Intersection::new(2, so);
         let xs = vec![i1, i2];
@@ -141,7 +141,7 @@ mod hit_tests {
     #[test]
     fn some_negative_t() {
         let s = Sphere::default();
-        let so = ReferenceObject::Sphere(&s);
+        let so = &s as &dyn Shape;
         let i1 = Intersection::new(-1, so);
         let i2 = Intersection::new(1, so);
         let xs = vec![i1, i2];
@@ -152,7 +152,7 @@ mod hit_tests {
     #[test]
     fn negative_t() {
         let s = Sphere::default();
-        let so = ReferenceObject::Sphere(&s);
+        let so = &s as &dyn Shape;
         let i1 = Intersection::new(-2, so);
         let i2 = Intersection::new(-1, so);
         let xs = vec![i1, i2];
@@ -163,7 +163,7 @@ mod hit_tests {
     #[test]
     fn lowest_nonnegative() {
         let s = Sphere::default();
-        let so = ReferenceObject::Sphere(&s);
+        let so = &s as &dyn Shape;
         let i1 = Intersection::new(5, so);
         let i2 = Intersection::new(7, so);
         let i3 = Intersection::new(-3, so);
@@ -177,7 +177,7 @@ mod hit_tests {
     fn precompute_state() {
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
         let shape = Sphere::default();
-        let i = Intersection::new(4.0, object::ReferenceObject::Sphere(&shape));
+        let i = Intersection::new(4.0, &shape);
         let comps = i.prepare_computations(&r);
         assert_eq!(comps.t, i.t);
         assert_eq!(comps.object, i.object);
@@ -190,7 +190,7 @@ mod hit_tests {
     fn precompute_not_inside() {
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
         let sphere = Sphere::default();
-        let shape = ReferenceObject::Sphere(&sphere);
+        let shape = &sphere as &dyn Shape;
         let i = Intersection::new(4.0, shape);
         let comps = i.prepare_computations(&r);
         assert_eq!(comps.inside, false);
@@ -199,7 +199,7 @@ mod hit_tests {
     fn precompute_inside() {
         let r = Ray::new(Point::new(0, 0, 0), Vector::new(0, 0, 1));
         let sphere = Sphere::default();
-        let shape = ReferenceObject::Sphere(&sphere);
+        let shape =  &sphere as &dyn Shape;
         let i = Intersection::new(1.0, shape);
         let comps = i.prepare_computations(&r);
         assert_eq!(comps.point, Point::new(0, 0, 1));
@@ -213,7 +213,7 @@ mod hit_tests {
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
         let mut shape = Sphere::default();
         shape.set_transformation(Mat4::new_translation(0, 0, 1));
-        let i = Intersection::new(5, ReferenceObject::Sphere(&shape));
+        let i = Intersection::new(5,&shape);
         let comps = i.prepare_computations(&r);
         assert!(comps.over_point.z < -EPSILON / 2.);
         assert!(comps.point.z > comps.over_point.z);

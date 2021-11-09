@@ -9,13 +9,11 @@ use raytracerchallenge::{
     light::PointLight,
     material::Material,
     matrix::Mat4,
-    object::Object,
     ppm::write_to_ppm,
     shapes::sphere::Sphere,
     tuple::{Point, Vector},
     world::World,
 };
-
 fn main() {
     let mut floor = Sphere::default();
     floor.set_transformation(Mat4::new_scaling(10.0, 0.01, 10.0));
@@ -69,14 +67,14 @@ fn main() {
     left.material.shininess = 200 as Shininess;
 
     let mut world = World::default();
-
+    
     world.add_objects(&mut vec![
-        Object::Sphere(floor),
-        Object::Sphere(left_wall),
-        Object::Sphere(right_wall),
-        Object::Sphere(middle),
-        Object::Sphere(right),
-        Object::Sphere(left),
+        Box::new(floor),
+        Box::new(left_wall),
+        Box::new(right_wall),
+        Box::new(middle),
+        Box::new(right),
+        Box::new(left),
     ]);
 
     let light = PointLight::new(Point::new(-10, 10, -10), WHITE);
@@ -94,8 +92,8 @@ fn main() {
     ));
 
     let start_time = Instant::now();
-
-    let canvas = camera.render(&world).unwrap();
+    let world_ref = &world;
+    let canvas = camera.render(world_ref).unwrap();
 
     let end_time = start_time.elapsed().as_millis();
 

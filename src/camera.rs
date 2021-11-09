@@ -18,7 +18,7 @@ pub struct Camera {
     half_height: f64,
 }
 
-impl Camera {
+impl<'shape: 'intersection, 'intersection> Camera {
     pub fn new(hsize: usize, vsize: usize, field_of_view: f64) -> Self {
         let half_view = (field_of_view / 2.0).tan();
         let aspect = hsize as f64 / vsize as f64;

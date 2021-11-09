@@ -25,6 +25,10 @@ impl Vector {
         }
     }
 
+    pub const fn const_new(x: f64, y: f64, z: f64) -> Self {
+        Self { x, y, z }
+    }
+
     pub fn cross(&self, rhs: Self) -> Self {
         Self::new(
             self.y * rhs.z - self.z * rhs.y,
@@ -69,6 +73,10 @@ impl Point {
             y: y.into(),
             z: z.into(),
         }
+    }
+
+    pub fn const_new(x: f64, y: f64, z: f64) -> Self {
+        Self { x, y, z }
     }
 }
 
@@ -176,8 +184,26 @@ mod tuple_tests {
     }
 
     #[test]
+    fn test_const_new_point() {
+        let a = Point::const_new(4.3, -4.2, 3.1);
+        assert_eq!(a.x, 4.3);
+        assert_eq!(a.y, -4.2);
+        assert_eq!(a.z, 3.1);
+    }
+
+    #[test]
     fn test_new_vector() {
         let a = Vector::new(4.3, -4.2, 3.1);
+        assert_eq!(a.x, 4.3);
+        assert_eq!(a.y, -4.2);
+        assert_eq!(a.z, 3.1);
+    }
+
+    
+
+    #[test]
+    fn test_const_new_vector() {
+        let a = Vector::const_new(4.3, -4.2, 3.1);
         assert_eq!(a.x, 4.3);
         assert_eq!(a.y, -4.2);
         assert_eq!(a.z, 3.1);

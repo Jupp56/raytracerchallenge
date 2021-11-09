@@ -8,17 +8,19 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-pub trait Shape<'a> {
-    fn intersect(&'a self, ray: &'a Ray, intersections: &mut Vec<Intersection<'a>>) {
+use std::{any::Any, fmt::Debug};
+
+pub trait Shape: Any + Debug {
+    fn intersect<'a>(&'a self, ray: &Ray, intersections: &mut Vec<Intersection<'a>>) {
         let ray = ray.transformed(self.inverse_transformation_matrix());
-        self.local_intersect(ray, intersections);
+        self.local_intersect(&ray, intersections);
     }
     fn transform_ray_to_object_space(&self, ray: &Ray) -> Ray {
         ray.transformed(self.inverse_transformation_matrix())
     }
-    fn local_intersect(&'a self, ray: Ray, intersections: &mut Vec<Intersection<'a>>);
+    fn local_intersect<'a>(&'a self, ray: &Ray, intersections: &mut Vec<Intersection<'a>>);
     fn material(&self) -> Material;
-
+    fn material_mut(&mut self) -> &mut Material;
     fn transformation_matrix(&self) -> Mat4;
     /// The inverted transformation matrix. Exists and can be overridden to cache the inverted matrix
     fn inverse_transformation_matrix(&self) -> Mat4 {
@@ -59,6 +61,14 @@ pub trait Shape<'a> {
             in_shadow,
         )
     }
+    fn box_eq(&self, other: &dyn Any) -> bool;
+    fn as_any(&self) -> &dyn Any;
+}
+
+impl PartialEq for dyn Shape {
+    fn eq(&self, other: &dyn Shape) -> bool {
+        self.box_eq(other.as_any())
+    }
 }
 
 #[cfg(test)]
@@ -75,6 +85,7 @@ mod shape_tests {
 
     static mut SAVED_RAY: Option<Ray> = None;
 
+    #[derive(Copy, Clone, Debug)]
     struct TestShape {
         transformation_matrix: Mat4,
     }
@@ -104,14 +115,14 @@ mod shape_tests {
         }
     }
 
-    impl<'a> Shape<'a> for TestShape {
-        fn local_intersect(
+    impl Shape for TestShape {
+        fn local_intersect<'a>(
             &'a self,
-            ray: crate::ray::Ray,
+            ray: &crate::ray::Ray,
             _intersections: &mut Vec<crate::intersection::Intersection<'a>>,
         ) {
             unsafe {
-                SAVED_RAY = Some(ray);
+                SAVED_RAY = Some(*ray);
             }
         }
 
@@ -125,6 +136,18 @@ mod shape_tests {
 
         fn local_normal_at(&self, p: Point) -> Vector {
             Vector::new(p.x, p.y, p.z)
+        }
+
+        fn box_eq(&self, _other: &dyn std::any::Any) -> bool {
+            todo!()
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            todo!()
+        }
+
+        fn material_mut(&mut self) -> &mut crate::material::Material {
+            todo!()
         }
     }
 
