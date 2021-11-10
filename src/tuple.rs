@@ -199,8 +199,6 @@ mod tuple_tests {
         assert_eq!(a.z, 3.1);
     }
 
-    
-
     #[test]
     fn test_const_new_vector() {
         let a = Vector::const_new(4.3, -4.2, 3.1);

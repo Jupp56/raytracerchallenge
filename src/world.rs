@@ -43,7 +43,7 @@ impl World {
     pub fn intersect(&self, r: &Ray) -> Vec<Intersection> {
         let mut intersections: Vec<Intersection> = Vec::new();
         for object in &self.objects {
-            object.intersect(&r, &mut intersections);
+            object.intersect(r, &mut intersections);
         }
         intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
         intersections
@@ -70,7 +70,7 @@ impl World {
         let hit = hit(intersections);
         let color = match hit {
             Some(h) => {
-                let comps = h.prepare_computations(&r);
+                let comps = h.prepare_computations(r);
                 self.shade_hit(&comps)
             }
             None => BLACK,

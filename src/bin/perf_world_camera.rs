@@ -63,15 +63,15 @@ fn main() {
     left.material.specular = 0.3;
 
     let mut world = World::default();
-/*
+
     world.add_objects(&mut vec![
-        Object::Sphere(floor),
-        Object::Sphere(left_wall),
-        Object::Sphere(right_wall),
-        Object::Sphere(middle),
-        Object::Sphere(right),
-        Object::Sphere(left),
-    ]);*/
+        Box::new(floor),
+        Box::new(left_wall),
+        Box::new(right_wall),
+        Box::new(middle),
+        Box::new(right),
+        Box::new(left),
+    ]);
 
     let light = PointLight::new(Point::new(-10, 10, -10), WHITE);
     let light2 = PointLight::new(Point::new(10, 5, -10), Color::new(0.2, 0.2, 0.2));
@@ -89,7 +89,7 @@ fn main() {
 
     //let start_time = Instant::now();
 
-   // let _canvas = camera.render(&world).unwrap();
+    let _canvas = camera.render(&world).unwrap();
 
     //let end_time = start_time.elapsed().as_millis();
 

@@ -72,6 +72,15 @@ impl Shape for Sphere {
     fn material_mut(&mut self) -> &mut Material {
         &mut self.material
     }
+
+    fn set_transformation_matrix(&mut self, matrix: Mat4) {
+        self.transformation_matrix = matrix;
+        self.inverted_transformation_matrix = matrix.inverse();
+    }
+
+    fn set_material(&mut self, m: Material) {
+        self.material = m;
+    }
 }
 
 impl Default for Sphere {

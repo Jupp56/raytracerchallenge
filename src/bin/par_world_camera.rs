@@ -1,19 +1,20 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use std::io::Write;
+use std::time::Instant;
+use std::{f64::consts::PI, fs::File};
 
-use std::f64::consts::PI;
-
+use raytracerchallenge::material::Shininess;
 use raytracerchallenge::{
     camera::Camera,
     color::{Color, WHITE},
     light::PointLight,
     material::Material,
     matrix::Mat4,
+    ppm::write_to_ppm,
     shapes::sphere::Sphere,
     tuple::{Point, Vector},
     world::World,
 };
-
-fn setup_world() -> World {
+fn main() {
     let mut floor = Sphere::default();
     floor.set_transformation(Mat4::new_scaling(10.0, 0.01, 10.0));
 
@@ -63,6 +64,7 @@ fn setup_world() -> World {
     left.material.color = Color::new(1.0, 0.8, 0.1);
     left.material.diffuse = 0.7;
     left.material.specular = 0.3;
+    left.material.shininess = 200 as Shininess;
 
     let mut world = World::default();
 
@@ -81,11 +83,7 @@ fn setup_world() -> World {
     world.add_light(light);
     world.add_light(light2);
 
-    world
-}
-
-fn setup_camera() -> Camera {
-    let mut camera = Camera::new(1000, 500, PI / 3.0);
+    let mut camera = Camera::new(1920, 1080, PI / 3.0);
 
     camera.set_transform(Camera::view_transform(
         Point::new(0.0, 1.5, -5.0),
@@ -93,20 +91,23 @@ fn setup_camera() -> Camera {
         Vector::new(0, 1, 0),
     ));
 
-    camera
+    let start_time = Instant::now();
+    let world_ref = &world;
+    let canvas = camera.par_render(world_ref).unwrap();
+
+    let end_time = start_time.elapsed().as_millis();
+
+    println!(
+        "Rendered image with {} objects at {} x {} (={}) pixels in {} milliseconds.",
+        world.objects().len(),
+        camera.hsize,
+        camera.vsize,
+        camera.hsize * camera.vsize,
+        end_time
+    );
+
+    let ppm = write_to_ppm(canvas);
+
+    let mut file = File::create("./shadows-par.ppm").unwrap();
+    let _ = write!(file, "{}", ppm);
 }
-
-fn world_bench(world: World, camera: Camera) {
-    let _canvas = camera.render(&world).unwrap();
-}
-
-fn criterion_benchmark(c: &mut Criterion) {
-    let camera = setup_camera();
-
-    c.bench_function("world", |b| {
-        b.iter(|| world_bench(black_box(setup_world()), black_box(camera.clone())))
-    });
-}
-
-criterion_group!(benches, criterion_benchmark);
-criterion_main!(benches);

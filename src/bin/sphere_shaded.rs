@@ -6,7 +6,7 @@ use raytracerchallenge::canvas::Canvas;
 use raytracerchallenge::color::Color;
 use raytracerchallenge::intersection::hit;
 use raytracerchallenge::light::PointLight;
-use raytracerchallenge::material::Material;
+use raytracerchallenge::material::{Material, Shininess};
 use raytracerchallenge::matrix::Mat4;
 use raytracerchallenge::ppm::write_to_ppm;
 use raytracerchallenge::ray::Ray;
@@ -31,7 +31,7 @@ pub fn cast() -> Canvas {
     let mut sphere = Sphere::default();
     sphere.material = Material::default();
     sphere.material.color = Color::new(0.2, 0.6, 0.2);
-    sphere.material.shininess = 70;
+    sphere.material.shininess = 70 as Shininess;
 
     let light_position = Point::new(-10, 10, -10);
     let light_color = Color::new(1, 1, 1);
@@ -52,7 +52,11 @@ pub fn cast() -> Canvas {
             sphere.intersect(&ray, &mut intersections);
 
             if let Some(intersection) = hit(intersections) {
-                let object  = intersection.object.as_any().downcast_ref::<Sphere>().unwrap();
+                let object = intersection
+                    .object
+                    .as_any()
+                    .downcast_ref::<Sphere>()
+                    .unwrap();
                 let point = ray.position(intersection.t);
                 let normal = object.normal_at(point);
 

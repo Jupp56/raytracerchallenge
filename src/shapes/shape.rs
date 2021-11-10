@@ -10,7 +10,7 @@ use crate::{
 
 use std::{any::Any, fmt::Debug};
 
-pub trait Shape: Any + Debug {
+pub trait Shape: Any + Debug + Send + Sync {
     fn intersect<'a>(&'a self, ray: &Ray, intersections: &mut Vec<Intersection<'a>>) {
         let ray = ray.transformed(self.inverse_transformation_matrix());
         self.local_intersect(&ray, intersections);
@@ -19,8 +19,11 @@ pub trait Shape: Any + Debug {
         ray.transformed(self.inverse_transformation_matrix())
     }
     fn local_intersect<'a>(&'a self, ray: &Ray, intersections: &mut Vec<Intersection<'a>>);
+
     fn material(&self) -> Material;
     fn material_mut(&mut self) -> &mut Material;
+    fn set_material(&mut self, m: Material);
+
     fn transformation_matrix(&self) -> Mat4;
     /// The inverted transformation matrix. Exists and can be overridden to cache the inverted matrix
     fn inverse_transformation_matrix(&self) -> Mat4 {
@@ -30,6 +33,7 @@ pub trait Shape: Any + Debug {
     fn inverse_of_transpose_of_transformation_matrix(&self) -> Mat4 {
         self.inverse_transformation_matrix().transpose()
     }
+    fn set_transformation_matrix(&mut self, matrix: Mat4);
     /// The object's normal at a given point (world space).
     fn normal_at(&self, p: Point) -> Vector {
         let local_point = self.inverse_transformation_matrix() * p;
@@ -76,6 +80,7 @@ mod shape_tests {
     use std::f64::consts::PI;
 
     use crate::{
+        material::Material,
         matrix::{Mat4, IDENTITY_MATRIX_4},
         ray::Ray,
         tuple::{Point, Vector},
@@ -139,15 +144,23 @@ mod shape_tests {
         }
 
         fn box_eq(&self, _other: &dyn std::any::Any) -> bool {
-            todo!()
+            unimplemented!()
         }
 
         fn as_any(&self) -> &dyn std::any::Any {
-            todo!()
+            unimplemented!()
         }
 
         fn material_mut(&mut self) -> &mut crate::material::Material {
-            todo!()
+            unimplemented!()
+        }
+
+        fn set_material(&mut self, _m: Material) {
+            unimplemented!()
+        }
+
+        fn set_transformation_matrix(&mut self, _matrix: Mat4) {
+            unimplemented!()
         }
     }
 

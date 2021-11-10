@@ -67,7 +67,7 @@ fn main() {
     left.material.shininess = 200 as Shininess;
 
     let mut world = World::default();
-    
+
     world.add_objects(&mut vec![
         Box::new(floor),
         Box::new(left_wall),
@@ -108,6 +108,6 @@ fn main() {
 
     let ppm = write_to_ppm(canvas);
 
-    let mut file = File::create("./shadows-1-source.ppm").unwrap();
+    let mut file = File::create("./shadows-par.ppm").unwrap();
     let _ = write!(file, "{}", ppm);
 }

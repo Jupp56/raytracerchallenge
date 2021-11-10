@@ -1,60 +1,89 @@
-use crate::{epsilon::EPSILON, tuple::Vector};
+use crate::{
+    epsilon::EPSILON,
+    intersection::Intersection,
+    material::Material,
+    matrix::{Mat4, IDENTITY_MATRIX_4},
+    tuple::Vector,
+};
 
 use super::shape::Shape;
 
 const NORMAL: Vector = Vector::const_new(0.0, 1.0, 0.0);
 
-#[derive(Copy, Clone, Debug)]
-pub struct Plane {}
-
-impl Plane {}
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Plane {
+    transformation_matrix: Mat4,
+    inverted_transformation_matrix: Mat4,
+    material: Material,
+}
 
 impl Default for Plane {
     fn default() -> Self {
-        Self {}
+        Self {
+            transformation_matrix: IDENTITY_MATRIX_4,
+            inverted_transformation_matrix: IDENTITY_MATRIX_4,
+            material: Default::default(),
+        }
     }
 }
 
 impl Shape for Plane {
-    fn local_intersect(
-        &self,
+    fn local_intersect<'a>(
+        &'a self,
         ray: &crate::ray::Ray,
-        _intersections: &mut Vec<crate::intersection::Intersection>,
+        intersections: &mut Vec<crate::intersection::Intersection<'a>>,
     ) {
         if ray.direction.y.abs() < EPSILON {
             return;
-        } 
-        
+        }
+        let t = (-ray.origin.y) / ray.direction.y;
+        intersections.push(Intersection::new(t, self))
     }
 
     fn material(&self) -> crate::material::Material {
-        todo!()
+        self.material
     }
 
     fn transformation_matrix(&self) -> crate::matrix::Mat4 {
-        todo!()
+        self.transformation_matrix
+    }
+    fn inverse_transformation_matrix(&self) -> Mat4 {
+        self.inverted_transformation_matrix
     }
     #[inline]
     fn local_normal_at(&self, _p: crate::tuple::Point) -> crate::tuple::Vector {
         NORMAL
     }
 
-    fn box_eq(&self, _other: &dyn std::any::Any) -> bool {
-        todo!()
+    fn box_eq(&self, other: &dyn std::any::Any) -> bool {
+        other.downcast_ref::<Self>().map_or(false, |a| self == a)
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
-        todo!()
+        self
     }
 
     fn material_mut(&mut self) -> &mut crate::material::Material {
-        todo!()
+        &mut self.material
+    }
+
+    fn set_transformation_matrix(&mut self, matrix: Mat4) {
+        self.transformation_matrix = matrix;
+        self.inverted_transformation_matrix = matrix.inverse();
+    }
+
+    fn set_material(&mut self, m: Material) {
+        self.material = m;
     }
 }
 
 #[cfg(test)]
 mod plane_tests {
-    use crate::{ray::Ray, shapes::{plane::Plane, shape::Shape}, tuple::{Point, Vector}};
+    use crate::{
+        ray::Ray,
+        shapes::{plane::Plane, shape::Shape},
+        tuple::{Point, Vector},
+    };
 
     #[test]
     fn normal_is_constant() {
@@ -73,7 +102,7 @@ mod plane_tests {
         let p = Plane::default();
         let r = Ray::new(Point::new(0, 10, 0), Vector::new(0, 0, 1));
         let mut intersections = Vec::new();
-         p.local_intersect(&r, &mut intersections);
+        p.local_intersect(&r, &mut intersections);
         assert_eq!(intersections.len(), 0);
     }
 
@@ -82,23 +111,31 @@ mod plane_tests {
         let p = Plane::default();
         let r = Ray::new(Point::new(0, 0, 0), Vector::new(0, 0, 1));
         let mut intersections = Vec::new();
-         p.local_intersect(&r, &mut intersections);
+        p.local_intersect(&r, &mut intersections);
         assert_eq!(intersections.len(), 0);
     }
-    
+
     #[test]
     fn intersect_from_above() {
         let p = Plane::default();
         let r = Ray::new(Point::new(0, 1, 0), Vector::new(0, -1, 0));
+        let p_ref: &dyn Shape = &p;
         let mut intersections = Vec::new();
-         p.local_intersect(&r, &mut intersections);
+        p_ref.local_intersect(&r, &mut intersections);
         assert_eq!(intersections.len(), 1);
         assert_eq!(intersections[0].t, 1.0);
-        //assert_eq!(intersections[0].object, ReferenceObject::Plane(&p));
+        assert_eq!(intersections[0].object, p_ref);
     }
 
     #[test]
-    fn intersection_from_below() {
-
+    fn intersect_from_below() {
+        let p = Plane::default();
+        let r = Ray::new(Point::new(0, -1, 0), Vector::new(0, 1, 0));
+        let p_ref: &dyn Shape = &p;
+        let mut intersections = Vec::new();
+        p_ref.local_intersect(&r, &mut intersections);
+        assert_eq!(intersections.len(), 1);
+        assert_eq!(intersections[0].t, 1.0);
+        assert_eq!(intersections[0].object, p_ref);
     }
 }

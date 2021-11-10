@@ -6,6 +6,9 @@ use crate::{
     world::World,
 };
 
+#[cfg(feature = "rayon")]
+use rayon::prelude::*;
+
 #[derive(Copy, Clone, Debug)]
 pub struct Camera {
     pub hsize: usize,
@@ -82,6 +85,7 @@ impl<'shape: 'intersection, 'intersection> Camera {
         orientation * translation
     }
 
+    /// renders the given world using this camera.
     pub fn render(&self, world: &World) -> Result<Canvas, CanvasError> {
         let mut image = Canvas::new(self.hsize, self.vsize);
 
@@ -94,6 +98,34 @@ impl<'shape: 'intersection, 'intersection> Camera {
         }
 
         Ok(image)
+    }
+
+    /// Same as ```render()```, but uses all available system threads to parallelize.
+    #[cfg(feature = "rayon")]
+    pub fn par_render(&self, world: &World) -> Result<Canvas, CanvasError> {
+        let mut rows = Vec::with_capacity(self.vsize);
+        (0..(self.vsize))
+            .into_par_iter()
+            .map(|y| self.render_row(world, y))
+            .collect_into_vec(&mut rows);
+        let mut canvas = Canvas::new(self.hsize, self.vsize);
+        for (row, rowv) in rows.iter().enumerate() {
+            for (col, color) in rowv.iter().enumerate() {
+                canvas.write_pixel(col, row, *color)?;
+            }
+        }
+        Ok(canvas)
+    }
+
+    #[cfg(feature = "rayon")]
+    fn render_row(&self, world: &World, y: usize) -> Vec<crate::color::Color> {
+        let mut vec = Vec::with_capacity(self.hsize);
+        for x in 0..self.hsize {
+            let ray = self.ray_for_pixel(x, y);
+            let color = world.color_at(&ray);
+            vec.push(color);
+        }
+        vec
     }
 }
 
@@ -221,6 +253,34 @@ mod camera_tests {
         let up = Vector::new(0, 1, 0);
         c.set_transform(Camera::view_transform(from, to, up));
         let image = c.render(&w).unwrap();
+        assert_eq!(
+            image.pixel_at(5, 5).unwrap(),
+            Color::new(0.38066, 0.47583, 0.2855)
+        );
+    }
+}
+
+#[cfg(test)]
+#[cfg(feature = "rayon")]
+mod par_tests {
+    use std::f64::consts::PI;
+
+    use crate::{
+        camera::Camera,
+        color::Color,
+        tuple::{Point, Vector},
+        world::World,
+    };
+
+    #[test]
+    fn render_par() {
+        let w = World::test_world();
+        let mut c = Camera::new(11, 11, PI / 2.);
+        let from = Point::new(0, 0, -5);
+        let to = Point::new(0, 0, 0);
+        let up = Vector::new(0, 1, 0);
+        c.set_transform(Camera::view_transform(from, to, up));
+        let image = c.par_render(&w).unwrap();
         assert_eq!(
             image.pixel_at(5, 5).unwrap(),
             Color::new(0.38066, 0.47583, 0.2855)

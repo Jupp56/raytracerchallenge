@@ -1,3 +1,4 @@
+#![warn(clippy::all)]
 pub mod camera;
 pub mod canvas;
 pub mod color;

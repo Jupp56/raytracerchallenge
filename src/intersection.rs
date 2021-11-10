@@ -199,7 +199,7 @@ mod hit_tests {
     fn precompute_inside() {
         let r = Ray::new(Point::new(0, 0, 0), Vector::new(0, 0, 1));
         let sphere = Sphere::default();
-        let shape =  &sphere as &dyn Shape;
+        let shape = &sphere as &dyn Shape;
         let i = Intersection::new(1.0, shape);
         let comps = i.prepare_computations(&r);
         assert_eq!(comps.point, Point::new(0, 0, 1));
@@ -213,7 +213,7 @@ mod hit_tests {
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
         let mut shape = Sphere::default();
         shape.set_transformation(Mat4::new_translation(0, 0, 1));
-        let i = Intersection::new(5,&shape);
+        let i = Intersection::new(5, &shape);
         let comps = i.prepare_computations(&r);
         assert!(comps.over_point.z < -EPSILON / 2.);
         assert!(comps.point.z > comps.over_point.z);
