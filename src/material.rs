@@ -9,7 +9,7 @@ use crate::{
 pub type Shininess = f64;
 
 #[cfg(not(feature = "shininess_as_float"))]
-pub type Shininess = usize;
+pub type Shininess = i32;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Material {
@@ -108,13 +108,23 @@ impl Material {
                 // light reflects away from eye
                 BLACK
             } else {
-                let factor = reflect_dot_eye.powi(self.shininess as i32);
+                let factor = self.compute_specular_factor(reflect_dot_eye);
                 light.intensity * self.specular * factor
             };
             (diffuse, specular)
         };
 
         ambient + diffuse + specular
+    }
+
+    #[cfg(not(feature = "shininess_as_float"))]
+    fn compute_specular_factor(&self, reflect_dot_eye: f64) -> f64 {
+        reflect_dot_eye.powi(self.shininess)
+    }
+
+    #[cfg(feature = "shininess_as_float")]
+    fn compute_specular_factor(&self, reflect_dot_eye: f64) -> f64 {
+        reflect_dot_eye.powf(self.shininess)
     }
 }
 
