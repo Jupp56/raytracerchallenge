@@ -36,7 +36,7 @@ pub fn cast() -> Canvas {
             let ray = Ray::new(start_point, direction);
             let mut intersections = Vec::new();
             sphere.intersect(&ray, &mut intersections);
-            if let Some(_intersection) = hit(intersections) {
+            if let Some(_intersection) = hit(&mut intersections) {
                 c.write_pixel(i, j, Color::new(1.0, 0.0, 0.0)).unwrap();
             };
         }

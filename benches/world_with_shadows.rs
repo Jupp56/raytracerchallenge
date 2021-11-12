@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use std::f64::consts::PI;
+use std::{f64::consts::PI, time::Duration};
 
 use raytracerchallenge::{
     camera::Camera,
@@ -103,9 +103,16 @@ fn world_bench(world: World, camera: Camera) {
 fn criterion_benchmark(c: &mut Criterion) {
     let camera = setup_camera();
 
-    c.bench_function("world", |b| {
+    let mut group = c.benchmark_group("render_complete");
+    //group.sample_size(20);
+    group.warm_up_time(Duration::from_secs(5));
+    //group.measurement_time(Duration::from_secs(22));
+
+    group.bench_function("world", |b| {
         b.iter(|| world_bench(black_box(setup_world()), black_box(camera.clone())))
     });
+
+    group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);

@@ -89,10 +89,12 @@ impl<'shape: 'intersection, 'intersection> Camera {
     pub fn render(&self, world: &World) -> Result<Canvas, CanvasError> {
         let mut image = Canvas::new(self.hsize, self.vsize);
 
+        let mut intersections = Vec::new();
+
         for y in 0..self.vsize {
             for x in 0..self.hsize {
                 let ray = self.ray_for_pixel(x, y);
-                let color = world.color_at(&ray);
+                let color = world.color_at(&ray, &mut intersections);
                 image.write_pixel(x, y, color)?;
             }
         }

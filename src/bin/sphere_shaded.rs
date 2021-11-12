@@ -51,7 +51,7 @@ pub fn cast() -> Canvas {
             let mut intersections = Vec::new();
             sphere.intersect(&ray, &mut intersections);
 
-            if let Some(intersection) = hit(intersections) {
+            if let Some(intersection) = hit(&mut intersections) {
                 let object = intersection
                     .object
                     .as_any()

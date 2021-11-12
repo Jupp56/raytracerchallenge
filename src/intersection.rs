@@ -65,9 +65,15 @@ impl<'a> PartialOrd for Intersection<'a> {
     }
 }
 
-pub fn hit(intersections: Vec<Intersection>) -> Option<Intersection> {
+/// Computes the first (from the viewpoint of the origin of a ray) hit of the ray out of several intersections.
+/// Use this to determine the object a camera actually sees.
+///
+/// This function consumes the contents of the "intersections" vector.
+/// You can, however, re-use it later, which reduces the number of vector allocations for intersections from O(n) to O(1).
+pub fn hit<'a>(intersections: &mut Vec<Intersection<'a>>) -> Option<Intersection<'a>> {
     let mut lowest_non_neg_opt: Option<Intersection> = None;
-    for intersection in intersections {
+
+    while let Some(intersection) = intersections.pop() {
         if intersection.t < 0.0 {
             continue;
         }
@@ -133,8 +139,8 @@ mod hit_tests {
         let so = &s as &dyn Shape;
         let i1 = Intersection::new(1, so);
         let i2 = Intersection::new(2, so);
-        let xs = vec![i1, i2];
-        let i = hit(xs).unwrap();
+        let mut xs = vec![i1, i2];
+        let i = hit(&mut xs).unwrap();
         assert_eq!(i, i1);
     }
 
@@ -144,8 +150,8 @@ mod hit_tests {
         let so = &s as &dyn Shape;
         let i1 = Intersection::new(-1, so);
         let i2 = Intersection::new(1, so);
-        let xs = vec![i1, i2];
-        let i = hit(xs).unwrap();
+        let mut xs = vec![i1, i2];
+        let i = hit(&mut xs).unwrap();
         assert_eq!(i, i2);
     }
 
@@ -155,8 +161,8 @@ mod hit_tests {
         let so = &s as &dyn Shape;
         let i1 = Intersection::new(-2, so);
         let i2 = Intersection::new(-1, so);
-        let xs = vec![i1, i2];
-        let i = hit(xs);
+        let mut xs = vec![i1, i2];
+        let i = hit(&mut xs);
         assert!(i.is_none());
     }
 
@@ -168,8 +174,8 @@ mod hit_tests {
         let i2 = Intersection::new(7, so);
         let i3 = Intersection::new(-3, so);
         let i4 = Intersection::new(2, so);
-        let xs = vec![i1, i2, i3, i4];
-        let i = hit(xs).unwrap();
+        let mut xs = vec![i1, i2, i3, i4];
+        let i = hit(&mut xs).unwrap();
         assert_eq!(i, i4);
     }
 

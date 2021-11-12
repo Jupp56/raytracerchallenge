@@ -40,23 +40,29 @@ impl World {
         Self { objects, lights }
     }
 
-    pub fn intersect(&self, r: &Ray) -> Vec<Intersection> {
-        let mut intersections: Vec<Intersection> = Vec::new();
+    /// Tries to intersect the ray with all objects in the world.
+    /// Results are written to the provided "intersections" vector, which can be re-used later to save on allocations.
+    pub fn intersect<'a>(&'a self, r: &Ray, intersections: &mut Vec<Intersection<'a>>) {
         for object in &self.objects {
-            object.intersect(r, &mut intersections);
+            object.intersect(r, intersections);
         }
         intersections.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
-        intersections
     }
 
-    pub fn shade_hit(&self, comps: &PreparedComputations) -> Color {
+    /// Given the prepared computations of the point a ray hit, this function determines the color at this point by first determining the lighting conditions and then rendering the point by accessing its material's render method.
+    /// The intersections vector is only provided to save on allocations. If you did not get it, just pass an empty vector.
+    pub fn shade_hit<'a>(
+        &'a self,
+        comps: &PreparedComputations,
+        intersections: &mut Vec<Intersection<'a>>,
+    ) -> Color {
         let mut lights = self.lights.iter();
         match lights.next() {
             Some(light) => {
-                let in_shadow = self.in_shadow(light, &comps.over_point);
+                let in_shadow = self.in_shadow(light, &comps.over_point, intersections);
                 let mut color = comps.object.render_at(comps, light, in_shadow);
                 for light in lights {
-                    let in_shadow = self.in_shadow(light, &comps.over_point);
+                    let in_shadow = self.in_shadow(light, &comps.over_point, intersections);
                     color = color + comps.object.render_at(comps, light, in_shadow);
                 }
                 color
@@ -65,13 +71,17 @@ impl World {
         }
     }
 
-    pub fn color_at(&self, r: &Ray) -> Color {
-        let intersections = self.intersect(r);
+    /// Determines th color a ray produces.
+    /// If it does not hit, returns BLACK.
+    /// If it hits, returns the result of the rendered point.
+    /// The intersections argument is only for saving on allocations - if in doubt, pass a new vector.
+    pub fn color_at<'a>(&'a self, r: &Ray, intersections: &mut Vec<Intersection<'a>>) -> Color {
+        self.intersect(r, intersections);
         let hit = hit(intersections);
         let color = match hit {
             Some(h) => {
                 let comps = h.prepare_computations(r);
-                self.shade_hit(&comps)
+                self.shade_hit(&comps, intersections)
             }
             None => BLACK,
         };
@@ -102,13 +112,18 @@ impl World {
         &self.lights
     }
 
-    pub fn in_shadow(&self, light: &PointLight, point: &Point) -> bool {
+    pub fn in_shadow<'a>(
+        &'a self,
+        light: &PointLight,
+        point: &Point,
+        intersections: &mut Vec<Intersection<'a>>,
+    ) -> bool {
         let v = light.position - *point;
         let distance = v.magnitude();
         let direction = v.normalized();
 
         let r = Ray::new(*point, direction);
-        let intersections = self.intersect(&r);
+        self.intersect(&r, intersections);
 
         let h = hit(intersections);
 
@@ -176,12 +191,13 @@ mod world_tests {
     fn intersect_with_ray() {
         let w = World::test_world();
         let r = Ray::new(Point::new(0.0, 0.0, -5.0), Vector::new(0, 0, 1));
-        let xs = w.intersect(&r);
-        assert_eq!(xs.len(), 4);
-        assert!(epsilon_equal(xs[0].t, 4.));
-        assert!(epsilon_equal(xs[1].t, 4.5));
-        assert!(epsilon_equal(xs[2].t, 5.5));
-        assert!(epsilon_equal(xs[3].t, 6.));
+        let mut intersections = Vec::new();
+        w.intersect(&r, &mut intersections);
+        assert_eq!(intersections.len(), 4);
+        assert!(epsilon_equal(intersections[0].t, 4.));
+        assert!(epsilon_equal(intersections[1].t, 4.5));
+        assert!(epsilon_equal(intersections[2].t, 5.5));
+        assert!(epsilon_equal(intersections[3].t, 6.));
     }
 
     #[test]
@@ -192,7 +208,8 @@ mod world_tests {
         let s = &**shape;
         let i = Intersection::new(4.0, s);
         let comps = i.prepare_computations(&r);
-        let c = w.shade_hit(&comps);
+        let mut intersections = Vec::new();
+        let c = w.shade_hit(&comps, &mut intersections);
         assert_eq!(c, Color::new(0.38066, 0.47583, 0.2855));
     }
 
@@ -207,8 +224,9 @@ mod world_tests {
         let s = &*w.objects[1];
 
         let i = Intersection::new(0.5, s);
+        let mut intersections = Vec::new();
         let comps = i.prepare_computations(&r);
-        let c = w.shade_hit(&comps);
+        let c = w.shade_hit(&comps, &mut intersections);
         assert_eq!(c, Color::new(0.90498, 0.90498, 0.90498));
     }
 
@@ -216,7 +234,8 @@ mod world_tests {
     fn ray_misses() {
         let w = World::test_world();
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 1, 0));
-        let c = w.color_at(&r);
+        let mut intersections = Vec::new();
+        let c = w.color_at(&r, &mut intersections);
         assert_eq!(c, BLACK);
     }
 
@@ -224,7 +243,8 @@ mod world_tests {
     fn ray_hits() {
         let w = World::test_world();
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
-        let c = w.color_at(&r);
+        let mut intersections = Vec::new();
+        let c = w.color_at(&r, &mut intersections);
         assert_eq!(c, Color::new(0.38066, 0.47583, 0.2855));
     }
     #[test]
@@ -238,7 +258,8 @@ mod world_tests {
         let inner_color = material.color;
 
         let r = Ray::new(Point::new(0.0, 0.0, 0.75), Vector::new(0.0, 0.0, -1.0));
-        let c = w.color_at(&r);
+        let mut intersections = Vec::new();
+        let c = w.color_at(&r, &mut intersections);
         assert_eq!(c, inner_color);
     }
 
@@ -296,9 +317,10 @@ mod world_tests {
     fn no_shadow() {
         let w = World::test_world();
         let p = Point::new(0, 10, 0);
+        let mut intersections = Vec::new();
         let shadowed = {
             let light = w.lights()[0];
-            w.in_shadow(&light, &p)
+            w.in_shadow(&light, &p, &mut intersections)
         };
         assert_eq!(shadowed, false);
     }
@@ -307,9 +329,10 @@ mod world_tests {
     fn shadow_object_between_point_and_light() {
         let w = World::test_world();
         let p = Point::new(10, -10, 10);
+        let mut intersections = Vec::new();
         let shadowed = {
             let light = w.lights()[0];
-            w.in_shadow(&light, &p)
+            w.in_shadow(&light, &p, &mut intersections)
         };
         assert_eq!(shadowed, true);
     }
@@ -318,9 +341,10 @@ mod world_tests {
     fn shadow_object_behind_light() {
         let w = World::test_world();
         let p = Point::new(-20, 20, -20);
+        let mut intersections = Vec::new();
         let shadowed = {
             let light = w.lights()[0];
-            w.in_shadow(&light, &p)
+            w.in_shadow(&light, &p, &mut intersections)
         };
         assert_eq!(shadowed, false);
     }
@@ -329,9 +353,10 @@ mod world_tests {
     fn shadow_object_behind_point() {
         let w = World::test_world();
         let p = Point::new(-2, 2, -2);
+        let mut intersections = Vec::new();
         let shadowed = {
             let light = w.lights()[0];
-            w.in_shadow(&light, &p)
+            w.in_shadow(&light, &p, &mut intersections)
         };
         assert_eq!(shadowed, false);
     }
@@ -354,8 +379,8 @@ mod world_tests {
         let i = Intersection::new(4, s2);
 
         let comps = i.prepare_computations(&r);
-
-        let c = w.shade_hit(&comps);
+        let mut intersections = Vec::new();
+        let c = w.shade_hit(&comps, &mut intersections);
 
         assert_eq!(c, Color::new(0.1, 0.1, 0.1));
     }
