@@ -55,7 +55,7 @@ impl<'shape: 'intersection, 'intersection> Camera {
         self.inverted_transform = transform.inverse();
     }
 
-    pub fn ray_for_pixel(&self, px: usize, py: usize) -> Ray {
+    fn ray_for_pixel(&self, px: usize, py: usize) -> Ray {
         let x_offset = (px as f64 + 0.5) * self.pixel_size;
         let y_offset = (py as f64 + 0.5) * self.pixel_size;
 

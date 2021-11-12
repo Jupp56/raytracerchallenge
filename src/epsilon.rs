@@ -1,6 +1,6 @@
 pub const EPSILON: f64 = 0.0001;
 
-pub fn epsilon_equal(x: f64, y: f64) -> bool {
+pub(crate) fn epsilon_equal(x: f64, y: f64) -> bool {
     (x - y).abs() < EPSILON
 }
 

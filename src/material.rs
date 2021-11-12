@@ -77,7 +77,7 @@ impl Material {
         }
     }
 
-    pub fn lighting(
+    pub(crate) fn lighting(
         &self,
         light: &PointLight,
         point: Point,

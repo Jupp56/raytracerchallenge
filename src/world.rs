@@ -42,7 +42,7 @@ impl World {
 
     /// Tries to intersect the ray with all objects in the world.
     /// Results are written to the provided "intersections" vector, which can be re-used later to save on allocations.
-    pub fn intersect<'a>(&'a self, r: &Ray, intersections: &mut Vec<Intersection<'a>>) {
+    pub(crate) fn intersect<'a>(&'a self, r: &Ray, intersections: &mut Vec<Intersection<'a>>) {
         for object in &self.objects {
             object.intersect(r, intersections);
         }
@@ -51,7 +51,7 @@ impl World {
 
     /// Given the prepared computations of the point a ray hit, this function determines the color at this point by first determining the lighting conditions and then rendering the point by accessing its material's render method.
     /// The intersections vector is only provided to save on allocations. If you did not get it, just pass an empty vector.
-    pub fn shade_hit<'a>(
+    pub(crate) fn shade_hit<'a>(
         &'a self,
         comps: &PreparedComputations,
         intersections: &mut Vec<Intersection<'a>>,
@@ -75,7 +75,11 @@ impl World {
     /// If it does not hit, returns BLACK.
     /// If it hits, returns the result of the rendered point.
     /// The intersections argument is only for saving on allocations - if in doubt, pass a new vector.
-    pub fn color_at<'a>(&'a self, r: &Ray, intersections: &mut Vec<Intersection<'a>>) -> Color {
+    pub(crate) fn color_at<'a>(
+        &'a self,
+        r: &Ray,
+        intersections: &mut Vec<Intersection<'a>>,
+    ) -> Color {
         self.intersect(r, intersections);
         let hit = hit(intersections);
         let color = match hit {
@@ -112,7 +116,7 @@ impl World {
         &self.lights
     }
 
-    pub fn in_shadow<'a>(
+    pub(crate) fn in_shadow<'a>(
         &'a self,
         light: &PointLight,
         point: &Point,
