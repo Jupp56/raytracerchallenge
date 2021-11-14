@@ -7,10 +7,14 @@ const BASE_COLOR: Color = Color {
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+/// Errors a canvas my throw
 pub enum CanvasError {
-    FaultyCoordinates,
+    /// The provided coordinates are not inside the dimensions of the canvas.
+    InvalidCoordinates,
 }
 
+#[derive(Clone, Debug)]
+/// The canvas this renderer draws it results on.
 pub struct Canvas {
     canvas: Vec<Vec<Color>>,
     width: usize,
@@ -18,10 +22,11 @@ pub struct Canvas {
 }
 
 impl Canvas {
+    ///
     pub fn new(width: usize, height: usize) -> Self {
         Canvas::new_with_color(width, height, BASE_COLOR)
     }
-
+    /// A new canvas, every pixel filled with the provided [`Color`]
     pub fn new_with_color(width: usize, height: usize, color: Color) -> Self {
         let mut vec = Vec::with_capacity(height);
         for _i in 0..height {
@@ -38,34 +43,41 @@ impl Canvas {
         }
     }
 
+    /// Returns the [`Color`] of the pixel at the provided coordinates.
+    /// Returns a [`CanvasError::InvalidCoordinates`] if the provided coordinates are not inside of the canvas dimensions.
     pub fn pixel_at(&self, x: usize, y: usize) -> Result<Color, CanvasError> {
         if !self.check_coordinates(x, y) {
-            return Err(CanvasError::FaultyCoordinates);
+            return Err(CanvasError::InvalidCoordinates);
         }
         Ok(self.canvas[y][x])
     }
 
+    /// Sets the [`Color`] of the pixel at the provided coordinates.
+    /// Returns a [`CanvasError::InvalidCoordinates`] if the provided coordinates are not inside of the canvas dimensions.
     pub fn write_pixel(&mut self, x: usize, y: usize, color: Color) -> Result<(), CanvasError> {
         if !self.check_coordinates(x, y) {
-            return Err(CanvasError::FaultyCoordinates);
+            return Err(CanvasError::InvalidCoordinates);
         }
         self.canvas[y][x] = color;
         Ok(())
     }
 
-    /// Checks if the coordinates provided are inside of the canvas
+    /// Checks if the coordinates provided are valid (inside of the canvas's dimensions)
     pub const fn check_coordinates(&self, x: usize, y: usize) -> bool {
         !(x >= self.width || y >= self.height)
     }
 
+    /// Vertical size of the canvas
     pub const fn height(&self) -> usize {
         self.height
     }
 
+    /// Horizontal size of the canvas
     pub const fn width(&self) -> usize {
         self.width
     }
 
+    /// Returns the backing [`Vec`] of this canvas.
     pub fn get_canvas(&self) -> Vec<Vec<Color>> {
         self.canvas.clone()
     }
@@ -122,7 +134,7 @@ mod canvas_tests {
     #[test]
     fn read_invalid_pixel() {
         let canvas = Canvas::new(10, 20);
-        assert_eq!(canvas.pixel_at(10, 0), Err(CanvasError::FaultyCoordinates));
+        assert_eq!(canvas.pixel_at(10, 0), Err(CanvasError::InvalidCoordinates));
     }
 
     #[test]
@@ -130,7 +142,7 @@ mod canvas_tests {
         let mut canvas = Canvas::new(10, 20);
         assert_eq!(
             canvas.write_pixel(0, 20, RED),
-            Err(CanvasError::FaultyCoordinates)
+            Err(CanvasError::InvalidCoordinates)
         );
     }
 

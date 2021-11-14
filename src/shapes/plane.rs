@@ -11,6 +11,7 @@ use super::shape::Shape;
 const NORMAL: Vector = Vector::const_new(0.0, 1.0, 0.0);
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+/// A 2d, infinite plane. Comparatively cheap to render as it's normal is constant (in object space) and rays only intersect once.
 pub struct Plane {
     transformation_matrix: Mat4,
     inverted_transformation_matrix: Mat4,
@@ -55,7 +56,7 @@ impl Shape for Plane {
         NORMAL
     }
 
-    fn box_eq(&self, other: &dyn std::any::Any) -> bool {
+    fn eq(&self, other: &dyn std::any::Any) -> bool {
         other.downcast_ref::<Self>().map_or(false, |a| self == a)
     }
 

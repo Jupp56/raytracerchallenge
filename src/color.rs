@@ -2,12 +2,14 @@ use std::ops::{Add, Mul, Sub};
 
 use crate::epsilon::epsilon_equal;
 
+/// The color black
 pub const BLACK: Color = Color {
     red: 0.0,
     green: 0.0,
     blue: 0.0,
 };
 
+/// The color white
 pub const WHITE: Color = Color {
     red: 1.0,
     green: 1.0,
@@ -15,13 +17,20 @@ pub const WHITE: Color = Color {
 };
 
 #[derive(Copy, Clone, Debug)]
+/// A color, represented as it's components red, green and blue.
+/// The maximum value for a component is 1.0, though computations should be able to exceed that limit.
+/// Therefore, no error is thrown.
 pub struct Color {
+    /// the red component
     pub red: f64,
+    /// the green component
     pub green: f64,
+    /// the blue component
     pub blue: f64,
 }
 
 impl Color {
+    /// Creates a new color
     pub fn new<T: Into<f64>>(red: T, green: T, blue: T) -> Self {
         Self {
             red: red.into(),

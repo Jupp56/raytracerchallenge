@@ -3,20 +3,29 @@ use std::ops::{Add, Div, Mul, Neg, Sub};
 use crate::epsilon::epsilon_equal;
 
 #[derive(Clone, Copy, Debug)]
+/// A point in 3d euclidan space (left handed coordinates)
 pub struct Point {
+    /// x coordinate
     pub x: f64,
+    /// y coordinate
     pub y: f64,
+    /// z coordinate
     pub z: f64,
 }
 
 #[derive(Clone, Copy, Debug)]
+/// A vector in 3d euclidean space (left handed coordinates)
 pub struct Vector {
+    /// x direction
     pub x: f64,
+    /// y direction
     pub y: f64,
+    /// z direction
     pub z: f64,
 }
 
 impl Vector {
+    /// A new vector
     pub fn new<T: Into<f64>>(x: T, y: T, z: T) -> Self {
         Self {
             x: x.into(),
@@ -25,10 +34,12 @@ impl Vector {
         }
     }
 
+    /// constant new function, used to make new generic
     pub const fn const_new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }
 
+    /// computes the cross product of two vectors
     pub fn cross(&self, rhs: Self) -> Self {
         Self::new(
             self.y * rhs.z - self.z * rhs.y,
@@ -37,6 +48,8 @@ impl Vector {
         )
     }
 
+    /// Normalizes this vector.
+    /// To create a normalized version, use ```normalized()```
     pub fn normalize(&mut self) {
         let magnitude = self.magnitude();
         self.x /= magnitude;
@@ -44,6 +57,8 @@ impl Vector {
         self.z /= magnitude;
     }
 
+    /// Returns a normalized version of this vector.
+    /// To normalize this vector, use ```normalize()``` instead;
     pub fn normalized(&self) -> Self {
         let magnitude = self.magnitude();
         Self {
@@ -53,20 +68,24 @@ impl Vector {
         }
     }
 
+    /// Computes the dot product of self.other
     pub fn dot(&self, rhs: Self) -> f64 {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 
+    /// Computes the magnitude of this vector
     pub fn magnitude(&self) -> f64 {
         (self.x.powi(2) + self.y.powi(2) + self.z.powi(2)).sqrt()
     }
 
+    /// Reflects this vector at the given vector
     pub fn reflect(&self, p: Vector) -> Vector {
         *self - p * 2.0 * self.dot(p)
     }
 }
 
 impl Point {
+    /// Creates a new point at (x,y,z)
     pub fn new<R: Into<f64>, S: Into<f64>, T: Into<f64>>(x: R, y: S, z: T) -> Self {
         Self {
             x: x.into(),
@@ -75,6 +94,7 @@ impl Point {
         }
     }
 
+    /// A constant function to create a new point at (x,y,z). Used to make new generic.
     pub fn const_new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }

@@ -1,5 +1,6 @@
 use crate::canvas::Canvas;
 
+/// Creates a PPM file format string from the canvas that can then be written to a file.
 pub fn write_to_ppm(canvas: Canvas) -> String {
     let mut header = format!("P3\n{} {}\n255", canvas.width(), canvas.height());
     let mut body = "\n".to_string();

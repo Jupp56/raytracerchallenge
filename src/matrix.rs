@@ -5,10 +5,14 @@ use crate::{
     tuple::{Point, Vector},
 };
 
+/// A 2x2 matrix
 pub type Mat4 = Matrix<4>;
+/// A 3x3 matrix
 pub type Mat3 = Matrix<3>;
+/// A 4x4 matrix
 pub type Mat2 = Matrix<2>;
 
+/// The 4x4 identity matrix
 pub const IDENTITY_MATRIX_4: Mat4 = Matrix::new([
     [1., 0., 0., 0.],
     [0., 1., 0., 0.],
@@ -23,20 +27,24 @@ pub struct Matrix<const SIZE: usize> {
 }
 
 impl<const SIZE: usize> Matrix<{ SIZE }> {
+    /// Creates a new, empty (all values 0) matrix.
     pub const fn new_empty() -> Self {
         Matrix {
             content: [[0.; SIZE]; SIZE],
         }
     }
 
+    /// Creates a new matrix from the given rectangular array
     pub const fn new(arr: [[f64; SIZE]; SIZE]) -> Self {
         Matrix { content: arr }
     }
 
+    /// returns the inner array.
     pub const fn get(&self, x: usize, y: usize) -> f64 {
         self.content[x][y]
     }
 
+    /// transposes a matrix.
     pub fn transpose(&self) -> Self {
         let mut m = Matrix::<SIZE>::new_empty();
 
@@ -137,16 +145,26 @@ impl Default for Mat4 {
 }
 
 impl Mat2 {
+    /// The determinant of this matrix
     pub fn determinant(&self) -> f64 {
         self[0][0] * self[1][1] - self[0][1] * self[1][0]
     }
 
+    /// checks wether this matrix is invertible by calculating its determinant
     pub fn invertible(&self) -> bool {
         self.determinant() != 0.0
     }
 }
 
 impl Mat3 {
+    /// A 2x2 submatrix of this 3x3 matrix, without the xth row and yth column
+    /// # Example
+    /// ```
+    /// use raytracerchallenge::matrix::{Mat2, Mat3};
+    /// let m3 = Mat3::new([[1., 5., 0.], [-3., 2., 7.], [0., 6., -3.]]);
+    /// let m2 = Mat2::new([[-3., 2.], [0., 6.]]);
+    /// assert_eq!(m3.submatrix(0, 2), m2);
+    /// ```
     pub fn submatrix(&self, x: usize, y: usize) -> Mat2 {
         let mut m = Mat2::new_empty();
         let mut passed_x = false;
@@ -173,10 +191,12 @@ impl Mat3 {
         m
     }
 
+    /// Calculates the minor of this matrix by calculating the determinant of its x-y-submatrix.
     pub fn minor(&self, i: usize, j: usize) -> f64 {
         self.submatrix(i, j).determinant()
     }
 
+    /// Calculates the i-j-cofactor of this matrix
     pub fn cofactor(&self, i: usize, j: usize) -> f64 {
         let mut cofactor = self.minor(i, j);
         if (i + j) % 2 == 1 {
@@ -186,6 +206,7 @@ impl Mat3 {
         cofactor
     }
 
+    /// Calculates the determinant of this matrix.
     pub fn determinant(&self) -> f64 {
         let mut det: f64 = 0.;
 
@@ -196,12 +217,28 @@ impl Mat3 {
         det
     }
 
+    /// Calculates if this matrix is invertible using its determinant
     pub fn invertible(&self) -> bool {
         self.determinant() != 0.0
     }
 }
 
 impl Mat4 {
+    /// Calculates the x-y-submatrix of this matrix, which is this matrix without the xth row and yth column.
+    /// # Example
+    /// ```
+    /// use raytracerchallenge::matrix::{Mat3, Mat4};
+    /// let m4 = Mat4::new([
+    /// [-6., 1., 1., 6.],
+    /// [-8., 5., 8., 6.],
+    /// [-1., 0., 8., 2.],
+    /// [-7., 1., -1., 1.],
+    /// ]);
+    ///
+    /// let m3 = Mat3::new([[-6., 1., 6.], [-8., 8., 6.], [-7., -1., 1.]]);
+    ///
+    /// assert_eq!(m4.submatrix(2, 1), m3);
+    /// ```
     pub fn submatrix(&self, x: usize, y: usize) -> Mat3 {
         let mut m = Mat3::new_empty();
         let mut passed_x = false;
@@ -228,10 +265,12 @@ impl Mat4 {
         m
     }
 
+    /// i-j-minor of this matrix
     pub fn minor(&self, i: usize, j: usize) -> f64 {
         self.submatrix(i, j).determinant()
     }
 
+    /// i-j-cofactor of this matrix
     pub fn cofactor(&self, i: usize, j: usize) -> f64 {
         let mut cofactor = self.minor(i, j);
         if (i + j) % 2 == 1 {
@@ -241,6 +280,7 @@ impl Mat4 {
         cofactor
     }
 
+    /// Determinant of this matrix
     pub fn determinant(&self) -> f64 {
         let mut det: f64 = 0.;
         for column in 0..4 {
@@ -249,10 +289,12 @@ impl Mat4 {
         det
     }
 
+    /// If this matrix is invertible
     pub fn invertible(&self) -> bool {
         self.determinant() != 0.0
     }
 
+    /// Inverts this matrix
     pub fn inverse(&self) -> Self {
         let mut m1 = Mat4::new_empty();
         let determinant = self.determinant();
@@ -267,6 +309,7 @@ impl Mat4 {
         m1
     }
 
+    /// Creates a new 4x4-Matrix translated by x, y and z.
     pub fn new_translation<T: Into<f64>>(x: T, y: T, z: T) -> Self {
         Mat4::new([
             [1., 0., 0., x.into()],
@@ -276,10 +319,12 @@ impl Mat4 {
         ])
     }
 
+    /// Translates this matrix by x, y and z.
     pub fn translate<T: Into<f64>>(&mut self, x: T, y: T, z: T) {
         *self *= Self::new_translation(x, y, z);
     }
 
+    /// Creates a new 4x3 matrix scaled by x, y and z.
     pub fn new_scaling<T: Into<f64>>(x: T, y: T, z: T) -> Self {
         Mat4::new([
             [x.into(), 0., 0., 0.],
@@ -289,10 +334,12 @@ impl Mat4 {
         ])
     }
 
+    /// Scales this matrix by x, y and z
     pub fn scale<T: Into<f64>>(&mut self, x: T, y: T, z: T) {
         *self *= Self::new_scaling(x, y, z);
     }
 
+    /// Creates a new rotation matrix for given x-rotation.
     pub fn new_rotation_x<T: Into<f64>>(r: T) -> Self {
         let r: f64 = r.into();
         Mat4::new([
@@ -303,10 +350,12 @@ impl Mat4 {
         ])
     }
 
+    /// rotates this matrix on the x axis
     pub fn rotate_x<T: Into<f64>>(&mut self, r: T) {
         *self *= Self::new_rotation_x(r);
     }
 
+    /// Creates a new rotation matrix for given y-rotation.
     pub fn new_rotation_y<T: Into<f64>>(r: T) -> Self {
         let r: f64 = r.into();
         Mat4::new([
@@ -317,10 +366,12 @@ impl Mat4 {
         ])
     }
 
+    /// rotates this matrix on the x axis
     pub fn rotate_y<T: Into<f64>>(&mut self, r: T) {
         *self *= Self::new_rotation_y(r);
     }
 
+    /// Creates a new rotation matrix for given z-rotation.
     pub fn new_rotation_z<T: Into<f64>>(r: T) -> Self {
         let r: f64 = r.into();
         Mat4::new([
@@ -331,10 +382,12 @@ impl Mat4 {
         ])
     }
 
+    /// rotates this matrix on the x axis
     pub fn rotate_z<T: Into<f64>>(&mut self, r: T) {
         *self *= Self::new_rotation_z(r);
     }
 
+    /// new shearing matrix
     pub fn new_shearing<T: Into<f64>>(x_y: T, x_z: T, y_x: T, y_z: T, z_x: T, z_y: T) -> Self {
         Mat4::new([
             [1., x_y.into(), x_z.into(), 0.],
@@ -344,6 +397,7 @@ impl Mat4 {
         ])
     }
 
+    /// applies shearing on this matrix
     pub fn shear<T: Into<f64>>(&mut self, x_y: T, x_z: T, y_x: T, y_z: T, z_x: T, z_y: T) {
         *self *= Self::new_shearing(x_y, x_z, y_x, y_z, z_x, z_y);
     }

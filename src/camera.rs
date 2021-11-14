@@ -1,3 +1,4 @@
+/// You use a camera to render the scene from a certain viewpoint to a [`Canvas`]
 use crate::{
     canvas::{Canvas, CanvasError},
     matrix::{Mat4, IDENTITY_MATRIX_4},
@@ -10,18 +11,26 @@ use crate::{
 use rayon::prelude::*;
 
 #[derive(Copy, Clone, Debug)]
+/// A camera that can render the scene from it's viewpoint.
+///
 pub struct Camera {
+    /// vertical size of the image
     pub hsize: usize,
+    /// horizontal size of the image
     pub vsize: usize,
+    /// field of view in unit circle degrees (90° would be PI/2)
     pub field_of_view: f64,
     transform: Mat4,
     inverted_transform: Mat4,
+    /// the size of an individual pixel (both height and width, pixels are assumed to be square)
     pub pixel_size: f64,
     half_width: f64,
     half_height: f64,
 }
 
-impl<'shape: 'intersection, 'intersection> Camera {
+impl Camera {
+    /// Creates a new camera with a horizontal pixel count of ```hsize``` and a vertial pixel count of ```vsize```.
+    /// The field of view is given as parts of the unit circle: 360° would be 2*PI, 90° PI/2.
     pub fn new(hsize: usize, vsize: usize, field_of_view: f64) -> Self {
         let half_view = (field_of_view / 2.0).tan();
         let aspect = hsize as f64 / vsize as f64;
@@ -46,10 +55,12 @@ impl<'shape: 'intersection, 'intersection> Camera {
         }
     }
 
+    /// Returns the transformation [`Mat4`] to the camera
     pub fn transform(&self) -> Mat4 {
         self.transform
     }
 
+    /// Applies a transformation [`Mat4`] to the camera
     pub fn set_transform(&mut self, transform: Mat4) {
         self.transform = transform;
         self.inverted_transform = transform.inverse();
@@ -69,6 +80,10 @@ impl<'shape: 'intersection, 'intersection> Camera {
         Ray::new(origin, direction)
     }
 
+    /// This function is a simple way to position and rotate the camera.
+    ///
+    /// You provide ```from``` as a start point (where the camera is positioned), a ```to``` point where the camera looks at and an ```up``` vector which should approximately point into the direction that is up.
+    /// You retrieve a transformation matrix which you can then apply via the [`Self::set_transform()`] method
     pub fn view_transform(from: Point, to: Point, mut up: Vector) -> Mat4 {
         let forward = (to - from).normalized();
         up.normalize();

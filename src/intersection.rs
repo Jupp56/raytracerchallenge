@@ -218,7 +218,7 @@ mod hit_tests {
     fn precompute_over_z() {
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
         let mut shape = Sphere::default();
-        shape.set_transformation(Mat4::new_translation(0, 0, 1));
+        shape.set_transformation_matrix(Mat4::new_translation(0, 0, 1));
         let i = Intersection::new(5, &shape);
         let comps = i.prepare_computations(&r);
         assert!(comps.over_point.z < -EPSILON / 2.);

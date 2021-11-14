@@ -10,20 +10,34 @@ use crate::{
 
 use std::{any::Any, fmt::Debug};
 
+/// This trait encapsulates the shared behaviour of all objects in the world (not lights, though!).
+///
+/// If you want to add your own shape, implement this trait for it.
+/// Most of the default methods take work from you (i.e. converting coordinates to object space).
+/// It is heavily recommended though to override [`Self::inverse_transformation_matrix`] to cache the matrix somehow (maybe when setting the original matrix), as this hugely increases performance.
 pub trait Shape: Any + Debug + Send + Sync {
+    /// The intersection of a ray with this shape.
+    /// This method converts the coordinates of the ray to object space and then calls local_intersect for the concrete impelementation.
+    /// You probably don't need to overwrite this.
     fn intersect<'a>(&'a self, ray: &Ray, intersections: &mut Vec<Intersection<'a>>) {
         let ray = ray.transformed(self.inverse_transformation_matrix());
         self.local_intersect(&ray, intersections);
     }
+    /// This method transforms a ray to object space.
+    /// You probably don't need to overwrite this.
     fn transform_ray_to_object_space(&self, ray: &Ray) -> Ray {
         ray.transformed(self.inverse_transformation_matrix())
     }
+    /// Implement your intersection logic here!
     fn local_intersect<'a>(&'a self, ray: &Ray, intersections: &mut Vec<Intersection<'a>>);
-
+    /// Returns the material of this shape.
     fn material(&self) -> Material;
+    /// Returns a mutable handle to the material of this shape.
     fn material_mut(&mut self) -> &mut Material;
+    /// Replaces this shape's material with the provided one.
     fn set_material(&mut self, m: Material);
 
+    /// Returns the transformation matrix of the shape.
     fn transformation_matrix(&self) -> Mat4;
     /// The inverted transformation matrix. Exists and can be overridden to cache the inverted matrix
     fn inverse_transformation_matrix(&self) -> Mat4 {
@@ -33,6 +47,7 @@ pub trait Shape: Any + Debug + Send + Sync {
     fn inverse_of_transpose_of_transformation_matrix(&self) -> Mat4 {
         self.inverse_transformation_matrix().transpose()
     }
+    /// Sets a new transformation matrix for this shape.
     fn set_transformation_matrix(&mut self, matrix: Mat4);
     /// The object's normal at a given point (world space).
     fn normal_at(&self, p: Point) -> Vector {
@@ -41,16 +56,17 @@ pub trait Shape: Any + Debug + Send + Sync {
         let world_normal = self.inverse_of_transpose_of_transformation_matrix() * local_normal;
         world_normal.normalized()
     }
+    /// Returns the normal at a given point (in object space)
     fn local_normal_at(&self, p: Point) -> Vector;
-    /// converts a point to object space
+    /// Converts a point to object space.
     fn to_object_space(&self, p: Point) -> Point {
         self.inverse_transformation_matrix() * p
     }
-    /// converts a point back to world space
+    /// Converts a point back to world space.
     fn to_world_space(&self, p: Point) -> Point {
         self.inverse_of_transpose_of_transformation_matrix() * p
     }
-    /// renders the color a ray sees at a given position
+    /// Renders the color a ray sees at a given position.
     fn render_at(
         &self,
         comps: &PreparedComputations,
@@ -65,13 +81,17 @@ pub trait Shape: Any + Debug + Send + Sync {
             in_shadow,
         )
     }
-    fn box_eq(&self, other: &dyn Any) -> bool;
+    /// Compares this shape to any other one.
+    ///
+    /// Needed to implement PartialEq for all shapes.
+    fn eq(&self, other: &dyn Any) -> bool;
+    /// Converts this to any, used to implement PartialEq.
     fn as_any(&self) -> &dyn Any;
 }
 
 impl PartialEq for dyn Shape {
     fn eq(&self, other: &dyn Shape) -> bool {
-        self.box_eq(other.as_any())
+        self.eq(other.as_any())
     }
 }
 
@@ -143,7 +163,7 @@ mod shape_tests {
             Vector::new(p.x, p.y, p.z)
         }
 
-        fn box_eq(&self, _other: &dyn std::any::Any) -> bool {
+        fn eq(&self, _other: &dyn std::any::Any) -> bool {
             unimplemented!()
         }
 

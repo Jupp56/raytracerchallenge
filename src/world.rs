@@ -11,12 +11,14 @@ use crate::{
 };
 
 #[derive(Debug)]
+/// The world to render
 pub struct World {
     objects: Vec<Box<dyn Shape>>,
     lights: Vec<PointLight>,
 }
 
 impl World {
+    /// Returns a test world with to spheres and a lights
     pub fn test_world() -> Self {
         let color_s1 = Color::new(0.8, 1.0, 0.6);
 
@@ -24,11 +26,11 @@ impl World {
 
         let material_s1 = Material::new(color_s1, 0.1, 0.7, 0.2, shininess);
         let mut s1 = Sphere::default();
-        s1.material = material_s1;
+        s1.set_material(material_s1);
 
         let transform_s2 = Mat4::new_scaling(0.5, 0.5, 0.5);
         let mut s2 = Sphere::default();
-        s2.set_transformation(transform_s2);
+        s2.set_transformation_matrix(transform_s2);
 
         let objects: Vec<Box<dyn Shape>> = vec![Box::new(s1), Box::new(s2)];
 
@@ -92,6 +94,7 @@ impl World {
         color
     }
 
+    /// Adds an object to the world
     pub fn add_object(&mut self, object: Box<dyn Shape>) {
         self.objects.push(object);
     }
@@ -100,6 +103,7 @@ impl World {
         self.objects.append(objects);
     }
 
+    /// Adds a light to the world
     pub fn add_light(&mut self, light: PointLight) {
         self.lights.push(light);
     }
@@ -108,10 +112,12 @@ impl World {
         self.lights.append(lights);
     }
 
+    /// Returns a reference to a vector of all objects
     pub fn objects(&self) -> &Vec<Box<dyn Shape>> {
         &self.objects
     }
 
+    /// Returns a reference to a vector of all lights
     pub fn lights(&self) -> &Vec<PointLight> {
         &self.lights
     }
@@ -157,7 +163,7 @@ mod world_tests {
         material::Material,
         matrix::Mat4,
         ray::Ray,
-        shapes::sphere::Sphere,
+        shapes::{shape::Shape, sphere::Sphere},
         tuple::{Point, Vector},
         world::World,
     };
@@ -179,10 +185,10 @@ mod world_tests {
         mat.color = Color::new(0.8, 1.0, 0.6);
         mat.diffuse = 0.7;
         mat.specular = 0.2;
-        s.material = mat;
+        s.set_material(mat);
         let mut s2 = Sphere::default();
         let transf = Mat4::new_scaling(0.5, 0.5, 0.5);
-        s2.set_transformation(transf);
+        s2.set_transformation_matrix(transf);
 
         assert_eq!(w.lights, vec!(light));
         let ws1 = w.objects[0].as_any().downcast_ref::<Sphere>().unwrap();
@@ -374,7 +380,7 @@ mod world_tests {
         w.add_object(Box::new(s1));
 
         let mut s2 = Sphere::default();
-        s2.set_transformation(Mat4::new_translation(0, 0, 10));
+        s2.set_transformation_matrix(Mat4::new_translation(0, 0, 10));
         w.add_object(Box::new(s2));
 
         let s2 = &*w.objects[1];

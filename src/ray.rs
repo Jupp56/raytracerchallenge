@@ -4,25 +4,37 @@ use crate::{
 };
 
 #[derive(Copy, Clone, Debug)]
+/// A ray in the world.
 pub struct Ray {
+    /// An origin [`Point`] the ray passes through
     pub origin: Point,
+    /// The direction [`Vector`] of the ray
     pub direction: Vector,
 }
 
 impl Ray {
+    /// Creates a new [`Ray`]
     pub fn new(origin: Point, direction: Vector) -> Self {
         Ray { origin, direction }
     }
+    /// The position of the [`Ray`]
     pub fn position<T: Into<f64>>(&self, t: T) -> Point {
         let t: f64 = t.into();
         self.origin + self.direction * t
     }
     #[inline]
+    /// Returns the ray transformed by a [`Matrix`]
     pub fn transformed(&self, m: Mat4) -> Self {
         Self {
             origin: m * self.origin,
             direction: m * self.direction,
         }
+    }
+    #[inline]
+    /// Applies the given transformation [`Mat4`] to this ray.
+    pub fn transform(&mut self, m: Mat4) {
+        self.origin = m * self.origin;
+        self.direction = m * self.direction;
     }
 }
 
@@ -58,7 +70,7 @@ mod ray_tests {
     }
 
     #[test]
-    fn translate() {
+    fn translated() {
         let r = Ray::new(Point::new(1, 2, 3), Vector::new(0, 1, 0));
         let m = Mat4::new_translation(3, 4, 5);
         let r2 = r.transformed(m);
@@ -67,11 +79,29 @@ mod ray_tests {
     }
 
     #[test]
-    fn scale() {
+    fn scaled() {
         let r = Ray::new(Point::new(1, 2, 3), Vector::new(0, 1, 0));
         let m = Mat4::new_scaling(2, 3, 4);
         let r2 = r.transformed(m);
         assert_eq!(r2.origin, Point::new(2, 6, 12));
         assert_eq!(r2.direction, Vector::new(0, 3, 0));
+    }
+
+    #[test]
+    fn translate() {
+        let mut r = Ray::new(Point::new(1, 2, 3), Vector::new(0, 1, 0));
+        let m = Mat4::new_translation(3, 4, 5);
+        r.transform(m);
+        assert_eq!(r.origin, Point::new(4, 6, 8));
+        assert_eq!(r.direction, Vector::new(0, 1, 0));
+    }
+
+    #[test]
+    fn scale() {
+        let mut r = Ray::new(Point::new(1, 2, 3), Vector::new(0, 1, 0));
+        let m = Mat4::new_scaling(2, 3, 4);
+        r.transform(m);
+        assert_eq!(r.origin, Point::new(2, 6, 12));
+        assert_eq!(r.direction, Vector::new(0, 3, 0));
     }
 }

@@ -6,17 +6,27 @@ use crate::{
 };
 
 #[cfg(feature = "shininess_as_float")]
+/// The shininess of a material. This type exists to facilitate usage of the feature "shininess_as_float" (documented at the crate root).
 pub type Shininess = f64;
 
 #[cfg(not(feature = "shininess_as_float"))]
+/// The shininess of a material. This type exists to facilitate usage of the feature "shininess_as_float" (documented at the crate root).
 pub type Shininess = i32;
 
 #[derive(Copy, Clone, Debug)]
+/// The material any object in the rendered world must have.
+/// The materials actual color at a given world position can be determined using its ```lighting()``` method which uses the phong shading model.
 pub struct Material {
+    /// The Color of the material
     pub color: Color,
+    /// Ambient factor used in the color rendering
     pub ambient: f64,
+    /// Diffuse factor used in the color rendering
     pub diffuse: f64,
+    /// Specular factor used in the color rendering
     pub specular: f64,
+    /// Shininess factor used in the color rendering.
+    /// For performance reasons, this is an ```i32``` by default. Use the "shininess_as_float" feature to switch over to floating point.
     pub shininess: Shininess,
 }
 
@@ -61,6 +71,19 @@ impl PartialEq for Material {
 }
 
 impl Material {
+    /// Creates a new material with the given color options.
+    /// # Example
+    /// This creates a green-ish matte material that isnt very shiny.
+    /// ```
+    /// use raytracerchallenge::color::Color;
+    /// use raytracerchallenge::material::Material;
+    /// let color = Color::new(0.1, 1.0, 0.5);
+    /// let ambient = 0.1;
+    /// let diffuse = 0.7;
+    /// let specular = 0.3;
+    /// let shininess = 30;
+    /// let m = Material::new(color, ambient, diffuse, specular, shininess);
+    /// ```
     pub fn new(
         color: Color,
         ambient: f64,

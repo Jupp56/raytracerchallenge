@@ -1,12 +1,17 @@
 use crate::{color::Color, tuple::Point};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+
+/// A simple, omni-directional point light.
 pub struct PointLight {
+    /// Position of this light in the world
     pub position: Point,
+    /// The color and strength of this light. Use a more dimmed color for less intensity.
     pub intensity: Color,
 }
 
 impl PointLight {
+    /// Instantiates a new PointLight with the given ```position``` and the ```intensity``` as color.
     pub fn new(position: Point, intensity: Color) -> Self {
         Self {
             position,

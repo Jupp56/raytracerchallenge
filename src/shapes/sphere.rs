@@ -1,3 +1,4 @@
+/// A sphere
 use std::any::Any;
 
 use crate::{
@@ -10,17 +11,11 @@ use crate::{
 };
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+/// The sphere shape.
 pub struct Sphere {
     transformation_matrix: Mat4,
     inverted_transformation_matrix: Mat4,
-    pub material: Material,
-}
-
-impl Sphere {
-    pub fn set_transformation(&mut self, m: Mat4) {
-        self.transformation_matrix = m;
-        self.inverted_transformation_matrix = m.inverse();
-    }
+    material: Material,
 }
 
 impl Shape for Sphere {
@@ -65,7 +60,7 @@ impl Shape for Sphere {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn box_eq(&self, other: &dyn Any) -> bool {
+    fn eq(&self, other: &dyn Any) -> bool {
         other.downcast_ref::<Self>().map_or(false, |a| self == a)
     }
 
@@ -200,7 +195,7 @@ mod sphere_tests {
         let mut s = Sphere::default();
         let mut m = Material::default();
         m.ambient = 1.0;
-        s.material = m;
-        assert_eq!(s.material.ambient, 1.0);
+        s.set_material(m);
+        assert_eq!(s.material().ambient, 1.0);
     }
 }

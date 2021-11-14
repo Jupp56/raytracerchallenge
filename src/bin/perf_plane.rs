@@ -15,55 +15,55 @@ use raytracerchallenge::{
 };
 fn main() {
     let mut floor = Plane::default();
-    //floor.set_transformation(Mat4::new_scaling(10.0, 0.01, 10.0));
+    //floor.set_transformation_matrix(Mat4::new_scaling(10.0, 0.01, 10.0));
 
     floor.set_material(Material::default());
     floor.material_mut().color = Color::new(1.0, 0.9, 0.9);
     floor.material_mut().specular = 0.0;
 
     let mut left_wall = Sphere::default();
-    left_wall.set_transformation(
+    left_wall.set_transformation_matrix(
         Mat4::new_translation(0, 0, 5)
             * Mat4::new_rotation_y(-PI / 4.0)
             * Mat4::new_rotation_x(PI / 2.0)
             * Mat4::new_scaling(10.0, 0.01, 10.0),
     );
-    left_wall.material = floor.material();
+    left_wall.set_material(floor.material());
 
     let mut right_wall = Sphere::default();
-    right_wall.set_transformation(
+    right_wall.set_transformation_matrix(
         Mat4::new_translation(0, 0, 5)
             * Mat4::new_rotation_y(PI / 4.0)
             * Mat4::new_rotation_x(PI / 2.0)
             * Mat4::new_scaling(10.0, 0.01, 10.0),
     );
-    right_wall.material = floor.material();
+    right_wall.set_material(floor.material());
 
     let mut middle = Sphere::default();
-    middle.set_transformation(Mat4::new_translation(-0.5, 1.0, 0.5));
-    middle.material = Material::default();
-    middle.material.color = Color::new(0.1, 1.0, 0.5);
-    middle.material.diffuse = 0.7;
-    middle.material.specular = 0.3;
+    middle.set_transformation_matrix(Mat4::new_translation(-0.5, 1.0, 0.5));
+    middle.set_material(Material::default());
+    middle.material_mut().color = Color::new(0.1, 1.0, 0.5);
+    middle.material_mut().diffuse = 0.7;
+    middle.material_mut().specular = 0.3;
 
     let mut right = Sphere::default();
-    right.set_transformation(
+    right.set_transformation_matrix(
         Mat4::new_translation(1.5, 0.5, -0.5) * Mat4::new_scaling(0.5, 0.5, 0.5),
     );
-    right.material = Material::default();
-    right.material.color = Color::new(0.1, 1.0, 0.5);
-    right.material.diffuse = 0.7;
-    right.material.specular = 0.3;
+    right.set_material(Material::default());
+    right.material_mut().color = Color::new(0.1, 1.0, 0.5);
+    right.material_mut().diffuse = 0.7;
+    right.material_mut().specular = 0.3;
 
     let mut left = Sphere::default();
-    left.set_transformation(
+    left.set_transformation_matrix(
         Mat4::new_translation(-1.5, 0.33, -0.75) * Mat4::new_scaling(0.33, 0.33, 0.33),
     );
-    left.material = Material::default();
-    left.material.color = Color::new(1.0, 0.8, 0.1);
-    left.material.diffuse = 0.7;
-    left.material.specular = 0.3;
-    left.material.shininess = 200 as Shininess;
+    left.set_material(Material::default());
+    left.material_mut().color = Color::new(1.0, 0.8, 0.1);
+    left.material_mut().diffuse = 0.7;
+    left.material_mut().specular = 0.3;
+    left.material_mut().shininess = 200 as Shininess;
 
     let mut world = World::default();
 
