@@ -137,9 +137,10 @@ impl Camera {
     #[cfg(feature = "rayon")]
     fn render_row(&self, world: &World, y: usize) -> Vec<crate::color::Color> {
         let mut vec = Vec::with_capacity(self.hsize);
+        let mut intersections = Vec::new();
         for x in 0..self.hsize {
             let ray = self.ray_for_pixel(x, y);
-            let color = world.color_at(&ray);
+            let color = world.color_at(&ray, &mut intersections);
             vec.push(color);
         }
         vec
