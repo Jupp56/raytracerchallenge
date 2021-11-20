@@ -2,6 +2,8 @@ use crate::{
     color::{Color, BLACK},
     epsilon::epsilon_equal,
     light::PointLight,
+    pattern::Pattern,
+    shapes::shape::Shape,
     tuple::{Point, Vector},
 };
 
@@ -13,12 +15,12 @@ pub type Shininess = f64;
 /// The shininess of a material. This type exists to facilitate usage of the feature "shininess_as_float" (documented at the crate root).
 pub type Shininess = i32;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 /// The material any object in the rendered world must have.
 /// The materials actual color at a given world position can be determined using its ```lighting()``` method which uses the phong shading model.
 pub struct Material {
     /// The Color of the material
-    pub color: Color,
+    pub color: ColorType,
     /// Ambient factor used in the color rendering
     pub ambient: f64,
     /// Diffuse factor used in the color rendering
@@ -39,7 +41,7 @@ const SHININESS_DEFAULT: Shininess = 200;
 impl Default for Material {
     fn default() -> Self {
         Self {
-            color: Color::new(1, 1, 1),
+            color: ColorType::Color(Color::new(1, 1, 1)),
             ambient: 0.1,
             diffuse: 0.9,
             specular: 0.9,
@@ -49,7 +51,7 @@ impl Default for Material {
 }
 
 #[cfg(feature = "shininess_as_float")]
-impl PartialEq for Material {
+impl<'a> PartialEq for Material<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.color == other.color
             && epsilon_equal(self.ambient, other.ambient)
@@ -76,16 +78,17 @@ impl Material {
     /// This creates a green-ish matte material that isnt very shiny.
     /// ```
     /// use raytracerchallenge::color::Color;
+    /// use raytracerchallenge::material::ColorType;
     /// use raytracerchallenge::material::Material;
     /// let color = Color::new(0.1, 1.0, 0.5);
     /// let ambient = 0.1;
     /// let diffuse = 0.7;
     /// let specular = 0.3;
     /// let shininess = 30;
-    /// let m = Material::new(color, ambient, diffuse, specular, shininess);
+    /// let m = Material::new(ColorType::Color(color), ambient, diffuse, specular, shininess);
     /// ```
     pub fn new(
-        color: Color,
+        color: ColorType,
         ambient: f64,
         diffuse: f64,
         specular: f64,
@@ -100,19 +103,31 @@ impl Material {
         }
     }
 
+    /// Ambient = false disables the ambient factor, so that two light sources dont double the ambient factor
     pub(crate) fn lighting(
         &self,
         light: &PointLight,
+        object: &dyn Shape,
         point: Point,
         eyev: Vector,
         normalv: Vector,
         in_shadow: bool,
+        use_ambient: bool,
     ) -> Color {
-        let effective_color = self.color * light.intensity;
+        let color = match &self.color {
+            ColorType::Color(color) => *color,
+            ColorType::Pattern(pattern) => pattern.apply_pattern_world_space(object, point),
+        };
+
+        let effective_color = color * light.intensity;
 
         let lightv = (light.position - point).normalized();
 
-        let ambient = effective_color * self.ambient;
+        let ambient = if use_ambient {
+            effective_color * self.ambient
+        } else {
+            BLACK
+        };
 
         if in_shadow {
             return ambient;
@@ -151,14 +166,48 @@ impl Material {
     }
 }
 
+#[derive(Clone, PartialEq)]
+/// The different types of colorings for a material - plain colors, patterns,...
+
+// Computation speed is more important than some bytes - colors are only stored once per object.
+#[allow(clippy::large_enum_variant)]
+pub enum ColorType {
+    /// A plain color everywhere on the object
+    Color(Color),
+    /// A pattern like stripes, checkerboard or a gradient
+    Pattern(Pattern),
+}
+
+use core::fmt::Debug;
+
+impl Debug for ColorType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Color(arg0) => f.debug_tuple("Color").field(arg0).finish(),
+            Self::Pattern(arg0) => f.debug_tuple("Pattern").field(arg0).finish(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod material_tests {
-    use crate::{color::Color, material::Material};
+
+    use std::rc::Rc;
+
+    use crate::{
+        color::{Color, BLACK, WHITE},
+        light::PointLight,
+        material::{ColorType, Material},
+        matrix::IDENTITY_MATRIX_4,
+        pattern::Pattern,
+        shapes::sphere::Sphere,
+        tuple::{Point, Vector},
+    };
 
     #[test]
     fn instantiate() {
         let m = Material::default();
-        assert_eq!(m.color, Color::new(1, 1, 1));
+        assert_eq!(m.color, ColorType::Color(Color::new(1, 1, 1)));
         assert_eq!(m.ambient, 0.1);
         assert_eq!(m.diffuse, 0.9);
         assert_eq!(m.specular, 0.9);
@@ -172,8 +221,14 @@ mod material_tests {
         let diffuse = 0.7;
         let specular = 0.8;
         let shininess = 1;
-        let m = Material::new(color, ambient, diffuse, specular, shininess);
-        assert_eq!(m.color, color);
+        let m = Material::new(
+            ColorType::Color(color),
+            ambient,
+            diffuse,
+            specular,
+            shininess,
+        );
+        assert_eq!(m.color, ColorType::Color(color));
         assert_eq!(m.ambient, ambient);
         assert_eq!(m.diffuse, diffuse);
         assert_eq!(m.specular, specular);
@@ -186,8 +241,12 @@ mod material_tests {
         assert_eq!(m, m);
 
         let mut m2 = Material::default();
-        m2.color = Color::new(2, 2, 2);
+        m2.color = ColorType::Color(Color::new(2, 2, 2));
         assert_ne!(m, m2);
+
+        let mut m2_2 = Material::default();
+        m2_2.color = ColorType::Pattern(Pattern::new(Rc::new(|_p| WHITE), IDENTITY_MATRIX_4));
+        assert_ne!(m, m2_2);
 
         let mut m3 = Material::default();
         m3.ambient = 34.2;
@@ -205,6 +264,39 @@ mod material_tests {
         m6.shininess = 34;
         assert_ne!(m, m6);
     }
+
+    #[test]
+    fn pattern() {
+        let mut m = Material::default();
+        m.color = ColorType::Pattern(Pattern::stripe(WHITE, BLACK));
+        m.ambient = 1.0;
+        m.diffuse = 0.0;
+        m.specular = 0.0;
+        let eyev = Vector::new(0, 0, -1);
+        let normalv = Vector::new(0, 0, -1);
+        let light = PointLight::new(Point::new(0, 0, -10), WHITE);
+
+        let c1 = m.lighting(
+            &light,
+            &Sphere::default(),
+            Point::new(0.9, 0, 0),
+            eyev,
+            normalv,
+            false,
+            true,
+        );
+        let c2 = m.lighting(
+            &light,
+            &Sphere::default(),
+            Point::new(1.1, 0, 0),
+            eyev,
+            normalv,
+            false,
+            true,
+        );
+        assert_eq!(c1, WHITE);
+        assert_eq!(c2, BLACK);
+    }
 }
 
 #[cfg(test)]
@@ -212,6 +304,7 @@ mod lighting_tests {
     use crate::{
         color::Color,
         light::PointLight,
+        shapes::sphere::Sphere,
         tuple::{Point, Vector},
     };
 
@@ -225,7 +318,15 @@ mod lighting_tests {
         let eyev = Vector::new(0, 0, -1);
         let normalv = eyev.clone();
         let light = PointLight::new(Point::new(0, 0, -10), Color::new(1, 1, 1));
-        let result = m.lighting(&light, position, eyev, normalv, false);
+        let result = m.lighting(
+            &light,
+            &Sphere::default(),
+            position,
+            eyev,
+            normalv,
+            false,
+            true,
+        );
         assert_eq!(result, Color::new(1.9, 1.9, 1.9));
     }
 
@@ -237,7 +338,15 @@ mod lighting_tests {
         let eyev = Vector::new(0.0, 2.0_f64.sqrt() / 2., -(2.0_f64.sqrt() / 2.));
         let normalv = Vector::new(0, 0, -1);
         let light = PointLight::new(Point::new(0, 0, -10), Color::new(1, 1, 1));
-        let result = m.lighting(&light, position, eyev, normalv, false);
+        let result = m.lighting(
+            &light,
+            &Sphere::default(),
+            position,
+            eyev,
+            normalv,
+            false,
+            true,
+        );
         assert_eq!(result, Color::new(1.0, 1.0, 1.0));
     }
 
@@ -249,7 +358,15 @@ mod lighting_tests {
         let eyev = Vector::new(0, 0, -1);
         let normalv = Vector::new(0, 0, -1);
         let light = PointLight::new(Point::new(0, 10, -10), Color::new(1, 1, 1));
-        let result = m.lighting(&light, position, eyev, normalv, false);
+        let result = m.lighting(
+            &light,
+            &Sphere::default(),
+            position,
+            eyev,
+            normalv,
+            false,
+            true,
+        );
         assert_eq!(result, Color::new(0.7364, 0.7364, 0.7364));
     }
 
@@ -261,7 +378,15 @@ mod lighting_tests {
         let eyev = Vector::new(0.0, -(2.0_f64.sqrt()) / 2., -(2.0_f64.sqrt() / 2.));
         let normalv = Vector::new(0, 0, -1);
         let light = PointLight::new(Point::new(0, 10, -10), Color::new(1, 1, 1));
-        let result = m.lighting(&light, position, eyev, normalv, false);
+        let result = m.lighting(
+            &light,
+            &Sphere::default(),
+            position,
+            eyev,
+            normalv,
+            false,
+            true,
+        );
         assert_eq!(result, Color::new(1.6364, 1.6364, 1.6364));
     }
 
@@ -273,7 +398,15 @@ mod lighting_tests {
         let eyev = Vector::new(0, 0, -1);
         let normalv = eyev.clone();
         let light = PointLight::new(Point::new(0, 0, 10), Color::new(1, 1, 1));
-        let result = m.lighting(&light, position, eyev, normalv, false);
+        let result = m.lighting(
+            &light,
+            &Sphere::default(),
+            position,
+            eyev,
+            normalv,
+            false,
+            true,
+        );
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
     }
 
@@ -286,7 +419,15 @@ mod lighting_tests {
         let normalv = Vector::new(0, 0, -1);
         let light = PointLight::new(Point::new(0, 0, -10), Color::new(1, 1, 1));
         let in_shadow = true;
-        let result = m.lighting(&light, position, eyev, normalv, in_shadow);
+        let result = m.lighting(
+            &light,
+            &Sphere::default(),
+            position,
+            eyev,
+            normalv,
+            in_shadow,
+            true,
+        );
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
     }
 }

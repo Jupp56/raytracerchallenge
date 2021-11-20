@@ -28,6 +28,7 @@ pub mod light;
 pub mod material;
 /// The nxn matrices used for computations
 pub mod matrix;
+pub mod pattern;
 /// PPM file format logic
 pub mod ppm;
 /// What gives a raytracer it's name
@@ -36,5 +37,4 @@ pub mod ray;
 pub mod shapes;
 /// Vectors and Points in 3d euclidean space
 pub mod tuple;
-/// The world containing objects and lights
 pub mod world;

@@ -1,8 +1,10 @@
+//! The world containing objects and lights
+
 use crate::{
     color::{Color, BLACK},
     intersection::{hit, Intersection, PreparedComputations},
     light::PointLight,
-    material::{Material, Shininess},
+    material::{ColorType, Material, Shininess},
     matrix::Mat4,
     ray::Ray,
     shapes::shape::Shape,
@@ -24,7 +26,7 @@ impl World {
 
         let shininess: Shininess = 200_usize as Shininess;
 
-        let material_s1 = Material::new(color_s1, 0.1, 0.7, 0.2, shininess);
+        let material_s1 = Material::new(ColorType::Color(color_s1), 0.1, 0.7, 0.2, shininess);
         let mut s1 = Sphere::default();
         s1.set_material(material_s1);
 
@@ -62,10 +64,10 @@ impl World {
         match lights.next() {
             Some(light) => {
                 let in_shadow = self.in_shadow(light, &comps.over_point, intersections);
-                let mut color = comps.object.render_at(comps, light, in_shadow);
+                let mut color = comps.object.render_at(comps, light, in_shadow, true);
                 for light in lights {
                     let in_shadow = self.in_shadow(light, &comps.over_point, intersections);
-                    color = color + comps.object.render_at(comps, light, in_shadow);
+                    color = color + comps.object.render_at(comps, light, in_shadow, false);
                 }
                 color
             }
@@ -160,7 +162,7 @@ mod world_tests {
         epsilon::epsilon_equal,
         intersection::Intersection,
         light::PointLight,
-        material::Material,
+        material::{ColorType, Material},
         matrix::Mat4,
         ray::Ray,
         shapes::{shape::Shape, sphere::Sphere},
@@ -182,7 +184,7 @@ mod world_tests {
         let light = PointLight::new(Point::new(-10, 10, -10), Color::new(1, 1, 1));
         let mut s = Sphere::default();
         let mut mat = Material::default();
-        mat.color = Color::new(0.8, 1.0, 0.6);
+        mat.color = ColorType::Color(Color::new(0.8, 1.0, 0.6));
         mat.diffuse = 0.7;
         mat.specular = 0.2;
         s.set_material(mat);
@@ -265,7 +267,11 @@ mod world_tests {
 
         let material = w.objects[1].material_mut();
         material.ambient = 1.0;
-        let inner_color = material.color;
+        let inner_color = &material.color;
+        let inner_color = match inner_color {
+            ColorType::Color(c) => *c,
+            _ => panic!("inner_color was not a plain color as expected"),
+        };
 
         let r = Ray::new(Point::new(0.0, 0.0, 0.75), Vector::new(0.0, 0.0, -1.0));
         let mut intersections = Vec::new();

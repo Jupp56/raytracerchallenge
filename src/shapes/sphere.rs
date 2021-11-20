@@ -10,13 +10,17 @@ use crate::{
     tuple::{Point, Vector},
 };
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+use super::shape::ShapeBound;
+
+#[derive(Debug, PartialEq)]
 /// The sphere shape.
 pub struct Sphere {
     transformation_matrix: Mat4,
     inverted_transformation_matrix: Mat4,
     material: Material,
 }
+
+impl ShapeBound for Sphere {}
 
 impl Shape for Sphere {
     fn local_intersect<'a>(&'a self, ray: &Ray, intersections: &mut Vec<Intersection<'a>>) {
@@ -40,8 +44,8 @@ impl Shape for Sphere {
         intersections.push(i2);
     }
 
-    fn material(&self) -> Material {
-        self.material
+    fn material(&self) -> &Material {
+        &self.material
     }
 
     fn transformation_matrix(&self) -> Mat4 {
@@ -61,7 +65,14 @@ impl Shape for Sphere {
         self
     }
     fn eq(&self, other: &dyn Any) -> bool {
-        other.downcast_ref::<Self>().map_or(false, |a| self == a)
+        match other.downcast_ref::<Self>() {
+            Some(other) => {
+                let self_pointer: *const Self = self;
+                let other_pointer: *const Self = other;
+                self_pointer == other_pointer
+            }
+            None => false,
+        }
     }
 
     fn material_mut(&mut self) -> &mut Material {
@@ -75,6 +86,10 @@ impl Shape for Sphere {
 
     fn set_material(&mut self, m: Material) {
         self.material = m;
+    }
+
+    fn as_shape(&self) -> &dyn Shape {
+        self
     }
 }
 

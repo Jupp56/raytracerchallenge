@@ -10,12 +10,20 @@ use crate::{
 
 use std::{any::Any, fmt::Debug};
 
+#[cfg(feature = "rayon")]
+/// Trait dependencies for Shape - differ depending on rayon being active
+pub trait ShapeBound: Any + Debug + Send + Sync {}
+
+#[cfg(not(feature = "rayon"))]
+/// Trait dependencies for Shape - differ depending on rayon being active
+pub trait ShapeBound: Any + Debug {}
+
 /// This trait encapsulates the shared behaviour of all objects in the world (not lights, though!).
 ///
 /// If you want to add your own shape, implement this trait for it.
 /// Most of the default methods take work from you (i.e. converting coordinates to object space).
 /// It is heavily recommended though to override [`Self::inverse_transformation_matrix`] to cache the matrix somehow (maybe when setting the original matrix), as this hugely increases performance.
-pub trait Shape: Any + Debug + Send + Sync {
+pub trait Shape: ShapeBound {
     /// The intersection of a ray with this shape.
     /// This method converts the coordinates of the ray to object space and then calls local_intersect for the concrete impelementation.
     /// You probably don't need to overwrite this.
@@ -31,7 +39,7 @@ pub trait Shape: Any + Debug + Send + Sync {
     /// Implement your intersection logic here!
     fn local_intersect<'a>(&'a self, ray: &Ray, intersections: &mut Vec<Intersection<'a>>);
     /// Returns the material of this shape.
-    fn material(&self) -> Material;
+    fn material(&self) -> &Material;
     /// Returns a mutable handle to the material of this shape.
     fn material_mut(&mut self) -> &mut Material;
     /// Replaces this shape's material with the provided one.
@@ -67,18 +75,23 @@ pub trait Shape: Any + Debug + Send + Sync {
         self.inverse_of_transpose_of_transformation_matrix() * p
     }
     /// Renders the color a ray sees at a given position.
+    /// Ambient determines whether to include ambient lighting (not included for every light source)
     fn render_at(
         &self,
         comps: &PreparedComputations,
         light: &PointLight,
         in_shadow: bool,
+        ambient: bool,
     ) -> Color {
+        let shape: &dyn Shape = self.as_shape();
         self.material().lighting(
             light,
+            shape,
             comps.over_point,
             comps.eyev,
             comps.normalv,
             in_shadow,
+            ambient,
         )
     }
     /// Compares this shape to any other one.
@@ -86,7 +99,16 @@ pub trait Shape: Any + Debug + Send + Sync {
     /// Needed to implement PartialEq for all shapes.
     fn eq(&self, other: &dyn Any) -> bool;
     /// Converts this to any, used to implement PartialEq.
+    ///
+    /// Solves a similar problem to the [`as_shape()`] method.
     fn as_any(&self) -> &dyn Any;
+    /// Creates a [`Self`] out of a trait implementor.
+    ///
+    /// Every concrete type needs to implement this,
+    /// because otherwise a trait method cannot access the object as &dyn Trait.
+    /// That is because the &self parameter of a trait function isn't [`Sized`]},
+    /// so you cannot cast it to &dyn Trait.
+    fn as_shape(&self) -> &dyn Shape;
 }
 
 impl PartialEq for dyn Shape {
@@ -106,7 +128,7 @@ mod shape_tests {
         tuple::{Point, Vector},
     };
 
-    use super::Shape;
+    use super::{Shape, ShapeBound};
 
     static mut SAVED_RAY: Option<Ray> = None;
 
@@ -140,6 +162,8 @@ mod shape_tests {
         }
     }
 
+    impl ShapeBound for TestShape {}
+
     impl Shape for TestShape {
         fn local_intersect<'a>(
             &'a self,
@@ -151,7 +175,7 @@ mod shape_tests {
             }
         }
 
-        fn material(&self) -> crate::material::Material {
+        fn material(&self) -> &crate::material::Material {
             unimplemented!()
         }
 
@@ -181,6 +205,10 @@ mod shape_tests {
 
         fn set_transformation_matrix(&mut self, _matrix: Mat4) {
             unimplemented!()
+        }
+
+        fn as_shape(&self) -> &dyn Shape {
+            todo!()
         }
     }
 

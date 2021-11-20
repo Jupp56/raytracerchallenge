@@ -6,17 +6,19 @@ use crate::{
     tuple::Vector,
 };
 
-use super::shape::Shape;
+use super::shape::{Shape, ShapeBound};
 
 const NORMAL: Vector = Vector::const_new(0.0, 1.0, 0.0);
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 /// A 2d, infinite plane. Comparatively cheap to render as it's normal is constant (in object space) and rays only intersect once.
 pub struct Plane {
     transformation_matrix: Mat4,
     inverted_transformation_matrix: Mat4,
     material: Material,
 }
+
+impl ShapeBound for Plane {}
 
 impl Default for Plane {
     fn default() -> Self {
@@ -41,8 +43,8 @@ impl Shape for Plane {
         intersections.push(Intersection::new(t, self))
     }
 
-    fn material(&self) -> crate::material::Material {
-        self.material
+    fn material(&self) -> &crate::material::Material {
+        &self.material
     }
 
     fn transformation_matrix(&self) -> crate::matrix::Mat4 {
@@ -75,6 +77,10 @@ impl Shape for Plane {
 
     fn set_material(&mut self, m: Material) {
         self.material = m;
+    }
+
+    fn as_shape(&self) -> &dyn Shape {
+        self
     }
 }
 

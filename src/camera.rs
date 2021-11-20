@@ -12,7 +12,6 @@ use rayon::prelude::*;
 
 #[derive(Copy, Clone, Debug)]
 /// A camera that can render the scene from it's viewpoint.
-///
 pub struct Camera {
     /// vertical size of the image
     pub hsize: usize,
