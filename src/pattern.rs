@@ -1,6 +1,11 @@
 //! Patterns on objects
 use core::fmt::Debug;
+
+#[cfg(not(feature = "rayon"))]
 use std::rc::Rc;
+
+#[cfg(feature = "rayon")]
+use std::sync::Arc;
 
 use crate::{
     color::Color,
@@ -10,26 +15,32 @@ use crate::{
     tuple::Point,
 };
 
+pub type PatternFunction = dyn Fn(Point) -> Color;
+
 #[cfg(not(feature = "rayon"))]
 /// A function to apply a pattern onto an object. Takes a point (in object space) and returns the color at that point.
-pub type PatternFunction = Rc<dyn Fn(Point) -> Color + Send + Sync>;
+pub type PatternFunctionWrapped = Rc<PatternFunction>;
+
+#[cfg(feature = "rayon")]
+/// A function to apply a pattern onto an object. Takes a point (in object space) and returns the color at that point.
+pub type PatternFunctionWrapped = Arc<PatternFunction + Send + Sync>;
 
 #[derive(Clone)]
 /// A pattern to apply to an object.
 pub struct Pattern {
     /// The [`PatternFunction`] that converts the point into a color
-    pub pattern_fn: PatternFunction,
+    pub pattern_fn: PatternFunctionWrapped,
     transformation_matrix: Mat4,
     inverse_transformation_matrix: Mat4,
 }
 
 impl Pattern {
-    /// Creates a new stripe pattern
-    pub fn stripe(color_a: Color, color_b: Color) -> Self {
+    /// Creates a new pattern with a user-defined pattern function.
+    pub fn new(pattern_fn: PatternFunctionWrapped, transformation_matrix: Mat4) -> Self {
         Self {
-            pattern_fn: Rc::new(move |point| stripe_at(color_a, color_b, &point)),
-            transformation_matrix: IDENTITY_MATRIX_4,
-            inverse_transformation_matrix: IDENTITY_MATRIX_4,
+            pattern_fn,
+            transformation_matrix,
+            inverse_transformation_matrix: transformation_matrix.inverse(),
         }
     }
 
@@ -45,15 +56,58 @@ impl Pattern {
         let point_pattern_space = self.inverse_transformation_matrix * point_object_space;
         (self.pattern_fn)(point_pattern_space)
     }
+}
 
-    /// Creates a new pattern with a user-defined pattern function.
-    pub fn new(pattern_fn: PatternFunction, transformation_matrix: Mat4) -> Self {
+impl From<PatternFunctionWrapped> for Pattern {
+    fn from(pattern_fn: PatternFunctionWrapped) -> Self {
         Self {
             pattern_fn,
-            transformation_matrix,
-            inverse_transformation_matrix: transformation_matrix.inverse(),
+            transformation_matrix: IDENTITY_MATRIX_4,
+            inverse_transformation_matrix: IDENTITY_MATRIX_4,
         }
     }
+}
+
+/// Built-in patterns
+impl Pattern {
+    /// Creates a new stripe pattern
+    pub fn stripe(color_a: Color, color_b: Color) -> Self {
+        let pattern_fn = move |point| stripe_at(color_a, color_b, &point);
+
+        #[cfg(not(feature = "rayon"))]
+        let pattern_fn: PatternFunctionWrapped = Rc::new(pattern_fn);
+        #[cfg(feature = "rayon")]
+        let pattern_fn: PatternFunctionWrapped = Arc::new(pattern_fn);
+
+        pattern_fn.into()
+    }
+
+    /// Creates a new gradient pattern
+    pub fn gradient(color_a: Color, color_b: Color) -> Self {
+        let pattern_fn = move |point| gradient_at(color_a, color_b, &point);
+
+        #[cfg(not(feature = "rayon"))]
+        let pattern_fn: PatternFunctionWrapped = Rc::new(pattern_fn);
+        #[cfg(feature = "rayon")]
+        let pattern_fn: PatternFunctionWrapped = Arc::new(pattern_fn);
+
+        pattern_fn.into()
+    }
+}
+
+/// Returns the result of the stripe pattern at a given coordinate in pattern space
+fn stripe_at(color_a: Color, color_b: Color, point: &Point) -> Color {
+    match (point.x.floor() % 2.0).abs() < EPSILON {
+        true => color_a,
+        false => color_b,
+    }
+}
+
+/// Returns the result of the stripe pattern at a given coordinate in pattern space
+fn gradient_at(color_a: Color, color_b: Color, point: &Point) -> Color {
+    let distance = color_b - color_a;
+    let fraction = point.x - point.x.floor();
+    color_a + distance * fraction
 }
 
 impl Debug for Pattern {
@@ -76,14 +130,6 @@ impl PartialEq for Pattern {
     }
 }
 
-/// Returns the result of the stripe pattern at a given coordinate
-fn stripe_at(color_a: Color, color_b: Color, point: &Point) -> Color {
-    match (((point.x * 50.0).floor()) % 2.0).abs() < EPSILON {
-        true => color_a,
-        false => color_b,
-    }
-}
-
 #[cfg(test)]
 mod pattern_tests {
     use std::rc::Rc;
@@ -96,34 +142,6 @@ mod pattern_tests {
         shapes::sphere::Sphere,
         tuple::Point,
     };
-
-    #[test]
-    fn stripe_constant_in_y() {
-        let pattern = Pattern::stripe(WHITE, BLACK);
-        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 0)), WHITE);
-        assert_eq!((pattern.pattern_fn)(Point::new(0, 1, 0)), WHITE);
-        assert_eq!((pattern.pattern_fn)(Point::new(0, 2, 0)), WHITE);
-    }
-
-    #[test]
-    fn stripe_constant_in_z() {
-        let pattern = Pattern::stripe(WHITE, BLACK);
-        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 0)), WHITE);
-        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 1)), WHITE);
-        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 2)), WHITE);
-    }
-
-    #[test]
-    fn stripe_alternates_in_x() {
-        let pattern = Pattern::stripe(WHITE, BLACK);
-        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 0)), WHITE);
-        assert_eq!((pattern.pattern_fn)(Point::new(0.9, 0, 0)), WHITE);
-        assert_eq!((pattern.pattern_fn)(Point::new(1, 0, 0)), BLACK);
-        assert_eq!((pattern.pattern_fn)(Point::new(-0.1, 0, 0)), BLACK);
-        assert_eq!((pattern.pattern_fn)(Point::new(-1, 0, 0)), BLACK);
-        assert_eq!((pattern.pattern_fn)(Point::new(-1.1, 0, 2)), WHITE);
-    }
-
     #[test]
     fn object_transformation() {
         let mut object = Sphere::default();
@@ -194,3 +212,59 @@ mod pattern_tests {
         assert_eq!(c, Color::new(0.75, 0.5, 0.25));
     }
 }
+
+#[cfg(test)]
+mod stripe_tests {
+    use crate::{
+        color::{BLACK, WHITE},
+        pattern::Pattern,
+        tuple::Point,
+    };
+
+    #[test]
+    fn stripe_constant_in_y() {
+        let pattern = Pattern::stripe(WHITE, BLACK);
+        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 0)), WHITE);
+        assert_eq!((pattern.pattern_fn)(Point::new(0, 1, 0)), WHITE);
+        assert_eq!((pattern.pattern_fn)(Point::new(0, 2, 0)), WHITE);
+    }
+
+    #[test]
+    fn stripe_constant_in_z() {
+        let pattern = Pattern::stripe(WHITE, BLACK);
+        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 0)), WHITE);
+        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 1)), WHITE);
+        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 2)), WHITE);
+    }
+
+    #[test]
+    fn stripe_alternates_in_x() {
+        let pattern = Pattern::stripe(WHITE, BLACK);
+        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 0)), WHITE);
+        assert_eq!((pattern.pattern_fn)(Point::new(0.9, 0, 0)), WHITE);
+        assert_eq!((pattern.pattern_fn)(Point::new(1, 0, 0)), BLACK);
+        assert_eq!((pattern.pattern_fn)(Point::new(-0.1, 0, 0)), BLACK);
+        assert_eq!((pattern.pattern_fn)(Point::new(-1, 0, 0)), BLACK);
+        assert_eq!((pattern.pattern_fn)(Point::new(-1.1, 0, 2)), WHITE);
+    }
+}
+
+#[cfg(test)]
+mod gradient_tests {
+    use crate::{color::{BLACK, WHITE}, pattern::gradient_at, tuple::Point};
+
+    use super::Pattern;
+
+    #[test]
+    fn gradient_function_linear_interpolation() {
+        let color = gradient_at(WHITE, BLACK, &Point::new(0,0,0));
+        assert_eq!(color, WHITE);
+    }
+
+    #[test]
+    fn gradient_linear_interpolation() {
+        let pattern = Pattern::gradient(WHITE, BLACK);
+        assert_eq!((pattern.pattern_fn)(Point::new(0, 0, 0)), WHITE);
+    }
+}
+
