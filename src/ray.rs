@@ -23,7 +23,7 @@ impl Ray {
         self.origin + self.direction * t
     }
     #[inline]
-    /// Returns the ray transformed by a [`Matrix`]
+    /// Returns the ray transformed by a [`Mat4`]
     pub fn transformed(&self, m: Mat4) -> Self {
         Self {
             origin: m * self.origin,

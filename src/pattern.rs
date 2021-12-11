@@ -15,15 +15,16 @@ use crate::{
     tuple::Point,
 };
 
+/// A function that turns a point on an object into the base color to apply there (before lighting).
 pub type PatternFunction = dyn Fn(Point) -> Color;
 
 #[cfg(not(feature = "rayon"))]
-/// A function to apply a pattern onto an object. Takes a point (in object space) and returns the color at that point.
+/// Wraps a  [`PatternFunction`] for single-thread use
 pub type PatternFunctionWrapped = Rc<PatternFunction>;
 
 #[cfg(feature = "rayon")]
-/// A function to apply a pattern onto an object. Takes a point (in object space) and returns the color at that point.
-pub type PatternFunctionWrapped = Arc<PatternFunction + Send + Sync>;
+/// Wraps a [`PatternFunction`] for multi-thread use
+pub type PatternFunctionWrapped = Arc<dyn PatternFunction + Send + Sync>;
 
 #[derive(Clone)]
 /// A pattern to apply to an object.

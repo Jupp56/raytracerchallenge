@@ -21,7 +21,7 @@ pub const IDENTITY_MATRIX_4: Mat4 = Matrix::new([
 ]);
 
 #[derive(Copy, Clone, Debug)]
-/// Matrix type, shorthand versions for dimensions 2-4 available as type ```Mat2```, ```Mat3``` and ```Mat4```.
+/// Matrix type, shorthand versions for dimensions 2-4 available as type [`Mat2`], [`Mat3`] and [`Mat4`].
 pub struct Matrix<const SIZE: usize> {
     content: [[f64; SIZE]; SIZE],
 }
@@ -165,19 +165,19 @@ impl Mat3 {
     /// let m2 = Mat2::new([[-3., 2.], [0., 6.]]);
     /// assert_eq!(m3.submatrix(0, 2), m2);
     /// ```
-    pub fn submatrix(&self, x: usize, y: usize) -> Mat2 {
+    pub fn submatrix(&self, i: usize, j: usize) -> Mat2 {
         let mut m = Mat2::new_empty();
         let mut passed_x = false;
 
         for row in 0..3 {
-            if row == x {
+            if row == i {
                 passed_x = true;
                 continue;
             }
             let actual_x = if passed_x { row - 1 } else { row };
             let mut passed_y = false;
             for col in 0..3 {
-                if col == y {
+                if col == j {
                     passed_y = true;
                     continue;
                 }
@@ -191,7 +191,7 @@ impl Mat3 {
         m
     }
 
-    /// Calculates the minor of this matrix by calculating the determinant of its x-y-submatrix.
+    /// Calculates the minor of this matrix by calculating the determinant of its i-j-submatrix.
     pub fn minor(&self, i: usize, j: usize) -> f64 {
         self.submatrix(i, j).determinant()
     }

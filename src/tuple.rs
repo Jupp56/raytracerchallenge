@@ -49,7 +49,7 @@ impl Vector {
     }
 
     /// Normalizes this vector.
-    /// To create a normalized version, use ```normalized()```
+    /// To create a normalized version, use [`Vector::normalized()`]
     pub fn normalize(&mut self) {
         let magnitude = self.magnitude();
         self.x /= magnitude;
@@ -58,7 +58,7 @@ impl Vector {
     }
 
     /// Returns a normalized version of this vector.
-    /// To normalize this vector, use ```normalize()``` instead;
+    /// To normalize this vector, use [`Vector::normalize()`] instead;
     pub fn normalized(&self) -> Self {
         let magnitude = self.magnitude();
         Self {
