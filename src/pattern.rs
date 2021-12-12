@@ -94,6 +94,29 @@ impl Pattern {
 
         pattern_fn.into()
     }
+
+    /// Creates a new ring pattern
+    pub fn ring(color_a: Color, color_b: Color) -> Self {
+        let pattern_fn = move |point| ring_at(color_a, color_b, &point);
+
+        #[cfg(not(feature = "rayon"))]
+        let pattern_fn: PatternFunctionWrapped = Rc::new(pattern_fn);
+        #[cfg(feature = "rayon")]
+        let pattern_fn: PatternFunctionWrapped = Arc::new(pattern_fn);
+
+        pattern_fn.into()
+    }
+    /// Creates a new ring pattern
+    pub fn checker(color_a: Color, color_b: Color) -> Self {
+        let pattern_fn = move |point| checker_at(color_a, color_b, &point);
+
+        #[cfg(not(feature = "rayon"))]
+        let pattern_fn: PatternFunctionWrapped = Rc::new(pattern_fn);
+        #[cfg(feature = "rayon")]
+        let pattern_fn: PatternFunctionWrapped = Arc::new(pattern_fn);
+
+        pattern_fn.into()
+    }
 }
 
 /// Returns the result of the stripe pattern at a given coordinate in pattern space
@@ -107,8 +130,32 @@ fn stripe_at(color_a: Color, color_b: Color, point: &Point) -> Color {
 /// Returns the result of the stripe pattern at a given coordinate in pattern space
 fn gradient_at(color_a: Color, color_b: Color, point: &Point) -> Color {
     let distance = color_b - color_a;
-    let fraction = point.x - point.x.floor();
+    let mut fraction = point.x - point.x.floor();
+    if !((point.x.floor() % 2.0).abs() < EPSILON) {
+        fraction = 1.0 - fraction;
+    }
     color_a + distance * fraction
+}
+
+fn ring_at(color_a: Color, color_b: Color, point: &Point) -> Color {
+    let squared = point.x.powi(2) + point.z.powi(2);
+    let unsquared = squared.sqrt();
+    let floored = unsquared.floor();
+    let is_mod = floored % 2.0;
+    if is_mod.abs() < EPSILON {
+        color_a
+    } else {
+        color_b
+    }
+}
+
+fn checker_at(color_a: Color, color_b: Color, point: &Point) -> Color {
+    let combined_magnitude = point.x.floor() + point.y.floor() + point.z.floor();
+    if combined_magnitude.abs() % 2.0 < EPSILON {
+        color_a
+    } else {
+        color_b
+    }
 }
 
 impl Debug for Pattern {
@@ -252,14 +299,33 @@ mod stripe_tests {
 
 #[cfg(test)]
 mod gradient_tests {
-    use crate::{color::{BLACK, WHITE}, pattern::gradient_at, tuple::Point};
+    use crate::{
+        color::{Color, BLACK, WHITE},
+        pattern::gradient_at,
+        tuple::Point,
+    };
 
     use super::Pattern;
 
     #[test]
     fn gradient_function_linear_interpolation() {
-        let color = gradient_at(WHITE, BLACK, &Point::new(0,0,0));
+        let color = gradient_at(WHITE, BLACK, &Point::new(0, 0, 0));
         assert_eq!(color, WHITE);
+        let color = gradient_at(WHITE, BLACK, &Point::new(0.25, 0, 0));
+        assert_eq!(color, Color::new(0.75, 0.75, 0.75));
+        let color = gradient_at(WHITE, BLACK, &Point::new(0.5, 0, 0));
+        assert_eq!(color, Color::new(0.5, 0.5, 0.5));
+        let color = gradient_at(WHITE, BLACK, &Point::new(0.75, 0, 0));
+        assert_eq!(color, Color::new(0.25, 0.25, 0.25));
+        let color = gradient_at(WHITE, BLACK, &Point::new(1, 0, 0));
+        assert_eq!(color, BLACK);
+        let color = gradient_at(WHITE, BLACK, &Point::new(1.25, 0, 0));
+        assert_eq!(color, Color::new(0.25, 0.25, 0.25));
+
+        let color = gradient_at(WHITE, BLACK, &Point::new(1.5, 0, 0));
+        assert_eq!(color, Color::new(0.5, 0.5, 0.5));
+        let color = gradient_at(WHITE, BLACK, &Point::new(1.75, 0, 0));
+        assert_eq!(color, Color::new(0.75, 0.75, 0.75));
     }
 
     #[test]
@@ -269,3 +335,72 @@ mod gradient_tests {
     }
 }
 
+#[cfg(test)]
+mod ring_tests {
+    use crate::{
+        color::{BLACK, WHITE},
+        pattern::{ring_at, Pattern},
+        tuple::Point,
+    };
+
+    #[test]
+    fn ring_function() {
+        let color = ring_at(WHITE, BLACK, &Point::new(0, 0, 0));
+        assert_eq!(color, WHITE);
+        let color = ring_at(WHITE, BLACK, &Point::new(0.2, 0, 0.2));
+        assert_eq!(color, WHITE);
+        let color = ring_at(WHITE, BLACK, &Point::new(1, 0, 0));
+        assert_eq!(color, BLACK);
+        let color = ring_at(WHITE, BLACK, &Point::new(0, 0, 1));
+        assert_eq!(color, BLACK);
+        let color = ring_at(WHITE, BLACK, &Point::new(0.708, 0., 0.708));
+        assert_eq!(color, BLACK);
+    }
+    #[test]
+    fn ring() {
+        let pattern = Pattern::ring(WHITE, BLACK);
+        let color = (pattern.pattern_fn)(Point::new(0, 0, 0));
+        assert_eq!(color, WHITE);
+        let color = (pattern.pattern_fn)(Point::new(1, 0, 0));
+        assert_eq!(color, BLACK);
+    }
+}
+
+#[cfg(test)]
+mod checkers_tests {
+    use crate::{
+        color::{BLACK, WHITE},
+        pattern::checker_at,
+        tuple::Point,
+    };
+
+    #[test]
+    fn checker_function_repeats_in_x() {
+        assert_eq!(checker_at(WHITE, BLACK, &Point::new(0, 0, 0)), WHITE);
+        assert_eq!(checker_at(WHITE, BLACK, &Point::new(0.99, 0.0, 0.0)), WHITE);
+        assert_eq!(checker_at(WHITE, BLACK, &Point::new(1.01, 0, 0)), BLACK);
+        assert_eq!(
+            checker_at(WHITE, BLACK, &Point::new(-0.01, 0.0, 0.0)),
+            BLACK
+        );
+        assert_eq!(
+            checker_at(WHITE, BLACK, &Point::new(-0.99, 0.0, 0.0)),
+            BLACK
+        );
+        assert_eq!(checker_at(WHITE, BLACK, &Point::new(-1.01, 0, 0)), WHITE);
+    }
+
+    #[test]
+    fn checker_function_repeats_in_y() {
+        assert_eq!(checker_at(WHITE, BLACK, &Point::new(0, 0, 0)), WHITE);
+        assert_eq!(checker_at(WHITE, BLACK, &Point::new(0, 0.99, 0)), WHITE);
+        assert_eq!(checker_at(WHITE, BLACK, &Point::new(0, 1.01, 0)), BLACK);
+    }
+
+    #[test]
+    fn checker_function_repeats_in_z() {
+        assert_eq!(checker_at(WHITE, BLACK, &Point::new(0, 0, 0)), WHITE);
+        assert_eq!(checker_at(WHITE, BLACK, &Point::new(0, 0, 0.99)), WHITE);
+        assert_eq!(checker_at(WHITE, BLACK, &Point::new(0, 0, 1.01)), BLACK);
+    }
+}
