@@ -22,6 +22,10 @@ harness = false
 name = "ray_transform"
 harness = false
 
+[[bench]]
+name = "matrix"
+harness = false
+
 [[bin]]
 name = "par_world_camera"
 required-features = ["rayon"]

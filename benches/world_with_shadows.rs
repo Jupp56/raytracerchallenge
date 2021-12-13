@@ -104,7 +104,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     let camera = setup_camera();
 
     let mut group = c.benchmark_group("render_complete");
-    //group.sample_size(20);
+    group.sample_size(10);
     group.warm_up_time(Duration::from_secs(5));
     //group.measurement_time(Duration::from_secs(22));
 
