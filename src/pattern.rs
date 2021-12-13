@@ -15,28 +15,26 @@ use crate::{
     tuple::Point,
 };
 
-pub type PatternFunction = dyn Fn(Point) -> Color;
-
 #[cfg(not(feature = "rayon"))]
 /// A function to apply a pattern onto an object. Takes a point (in object space) and returns the color at that point.
-pub type PatternFunctionWrapped = Rc<PatternFunction>;
+pub type PatternFunction = Rc<dyn Fn(Point) -> Color>;
 
 #[cfg(feature = "rayon")]
 /// A function to apply a pattern onto an object. Takes a point (in object space) and returns the color at that point.
-pub type PatternFunctionWrapped = Arc<PatternFunction + Send + Sync>;
+pub type PatternFunction = Arc<dyn Fn(Point) -> Color + Send + Sync>;
 
 #[derive(Clone)]
 /// A pattern to apply to an object.
 pub struct Pattern {
     /// The [`PatternFunction`] that converts the point into a color
-    pub pattern_fn: PatternFunctionWrapped,
+    pub pattern_fn: PatternFunction,
     transformation_matrix: Mat4,
     inverse_transformation_matrix: Mat4,
 }
 
 impl Pattern {
     /// Creates a new pattern with a user-defined pattern function.
-    pub fn new(pattern_fn: PatternFunctionWrapped, transformation_matrix: Mat4) -> Self {
+    pub fn new(pattern_fn: PatternFunction, transformation_matrix: Mat4) -> Self {
         Self {
             pattern_fn,
             transformation_matrix,
@@ -58,8 +56,8 @@ impl Pattern {
     }
 }
 
-impl From<PatternFunctionWrapped> for Pattern {
-    fn from(pattern_fn: PatternFunctionWrapped) -> Self {
+impl From<PatternFunction> for Pattern {
+    fn from(pattern_fn: PatternFunction) -> Self {
         Self {
             pattern_fn,
             transformation_matrix: IDENTITY_MATRIX_4,
@@ -75,9 +73,9 @@ impl Pattern {
         let pattern_fn = move |point| stripe_at(color_a, color_b, &point);
 
         #[cfg(not(feature = "rayon"))]
-        let pattern_fn: PatternFunctionWrapped = Rc::new(pattern_fn);
+        let pattern_fn: PatternFunction = Rc::new(pattern_fn);
         #[cfg(feature = "rayon")]
-        let pattern_fn: PatternFunctionWrapped = Arc::new(pattern_fn);
+        let pattern_fn: PatternFunction = Arc::new(pattern_fn);
 
         pattern_fn.into()
     }
@@ -87,9 +85,9 @@ impl Pattern {
         let pattern_fn = move |point| gradient_at(color_a, color_b, &point);
 
         #[cfg(not(feature = "rayon"))]
-        let pattern_fn: PatternFunctionWrapped = Rc::new(pattern_fn);
+        let pattern_fn: PatternFunction = Rc::new(pattern_fn);
         #[cfg(feature = "rayon")]
-        let pattern_fn: PatternFunctionWrapped = Arc::new(pattern_fn);
+        let pattern_fn: PatternFunction = Arc::new(pattern_fn);
 
         pattern_fn.into()
     }
