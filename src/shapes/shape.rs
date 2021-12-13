@@ -100,7 +100,7 @@ pub trait Shape: ShapeBound {
     fn eq(&self, other: &dyn Any) -> bool;
     /// Converts this to any, used to implement PartialEq.
     ///
-    /// Solves a similar problem to the [`as_shape()`] method.
+    /// Solves a similar problem to the [`Shape::as_shape()`] method.
     fn as_any(&self) -> &dyn Any;
     /// Creates a [`Self`] out of a trait implementor.
     ///
