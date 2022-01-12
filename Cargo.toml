@@ -30,5 +30,10 @@ harness = false
 name = "par_world_camera"
 required-features = ["rayon"]
 
+
+[[bin]]
+name = "par_patterns"
+required-features = ["rayon"]
+
 [features]
 shininess_as_float = []
