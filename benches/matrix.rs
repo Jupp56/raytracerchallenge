@@ -10,11 +10,13 @@ fn matrix_inverse(m: Mat4) {
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
-   let m4 = Mat4::new([[3., -9., 7., 3.],
-    [3., -8., 2., -9.],
-    [-4., 4., 4., 1.],
-    [-6., 5., -1., 1.]]);
-   
+    let m4 = Mat4::new([
+        [3., -9., 7., 3.],
+        [3., -8., 2., -9.],
+        [-4., 4., 4., 1.],
+        [-6., 5., -1., 1.],
+    ]);
+
     c.bench_function("matrix_inverse", |b| {
         b.iter(|| {
             matrix_inverse(black_box(m4));

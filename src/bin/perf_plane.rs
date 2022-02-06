@@ -89,5 +89,5 @@ fn main() {
     ));
 
     let world_ref = &world;
-    let _canvas = camera.render(world_ref).unwrap();
+    let _canvas = camera.render(world_ref, 0).unwrap();
 }

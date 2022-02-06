@@ -20,6 +20,7 @@ pub struct PreparedComputations<'a> {
     pub eyev: Vector,
     pub normalv: Vector,
     pub inside: bool,
+    pub reflectv: Vector,
 }
 
 impl<'a> Intersection<'a> {
@@ -44,6 +45,8 @@ impl<'a> Intersection<'a> {
 
         let over_point = point + normal * EPSILON;
 
+        let reflectv = r.direction.reflect(normal);
+
         PreparedComputations {
             t: self.t,
             object: self.object,
@@ -52,6 +55,7 @@ impl<'a> Intersection<'a> {
             eyev,
             normalv: normal,
             inside,
+            reflectv,
         }
     }
 }
@@ -127,7 +131,7 @@ mod hit_tests {
         intersection::hit,
         matrix::Mat4,
         ray::Ray,
-        shapes::{shape::Shape, sphere::Sphere},
+        shapes::{plane::Plane, shape::Shape, sphere::Sphere},
         tuple::{Point, Vector},
     };
 
@@ -223,5 +227,20 @@ mod hit_tests {
         let comps = i.prepare_computations(&r);
         assert!(comps.over_point.z < -EPSILON / 2.);
         assert!(comps.point.z > comps.over_point.z);
+    }
+
+    #[test]
+    fn prepare_computations_reflection_vec() {
+        let shape = Plane::default();
+        let r = Ray::new(
+            Point::new(0, 1, -1),
+            Vector::const_new(0.0, -(2.0_f64.sqrt()), 2.0_f64.sqrt()),
+        );
+        let i = Intersection::new(2.0_f64.sqrt(), &shape);
+        let comps = i.prepare_computations(&r);
+        assert_eq!(
+            comps.reflectv,
+            Vector::new(0.0, 2.0_f64.sqrt(), 2.0_f64.sqrt())
+        );
     }
 }

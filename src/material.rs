@@ -30,6 +30,12 @@ pub struct Material {
     /// Shininess factor used in the color rendering.
     /// For performance reasons, this is an ```i32``` by default. Use the "shininess_as_float" feature to switch over to floating point.
     pub shininess: Shininess,
+    /// Reflection factor
+    pub reflective: f64,
+    /// Transparency of the material. Values considered between 0 and 1 where 0 = solid and 1 = fully transparent.
+    pub transparency: f64,
+    /// The material's refractive index when shining light through it. Only applied if transparency != 0.
+    pub refractive_index: f64,
 }
 
 #[cfg(feature = "shininess_as_float")]
@@ -46,6 +52,9 @@ impl Default for Material {
             diffuse: 0.9,
             specular: 0.9,
             shininess: SHININESS_DEFAULT,
+            reflective: 0.0,
+            transparency: 0.0,
+            refractive_index: 1.0,
         }
     }
 }
@@ -85,14 +94,21 @@ impl Material {
     /// let diffuse = 0.7;
     /// let specular = 0.3;
     /// let shininess = 30;
-    /// let m = Material::new(ColorType::Color(color), ambient, diffuse, specular, shininess);
+    /// let reflective = 0.0;
+    /// let transparency = 0.0;
+    /// let refractive_index = 1.0;
+    /// let m = Material::new(ColorType::Color(color), ambient, diffuse, specular, shininess, reflective, transparency, refractive_index);
     /// ```
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         color: ColorType,
         ambient: f64,
         diffuse: f64,
         specular: f64,
         shininess: Shininess,
+        reflective: f64,
+        transparency: f64,
+        refractive_index: f64,
     ) -> Self {
         Self {
             color,
@@ -100,10 +116,14 @@ impl Material {
             diffuse,
             specular,
             shininess,
+            reflective,
+            transparency,
+            refractive_index,
         }
     }
 
     /// Ambient = false disables the ambient factor, so that two light sources dont double the ambient factor
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn lighting(
         &self,
         light: &PointLight,
@@ -164,6 +184,15 @@ impl Material {
     fn compute_specular_factor(&self, reflect_dot_eye: f64) -> f64 {
         reflect_dot_eye.powf(self.shininess)
     }
+
+    /// Creates a glass material
+    pub fn new_glass() -> Self {
+        Self {
+            transparency: 1.0,
+            refractive_index: 1.5,
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Clone, PartialEq)]
@@ -212,6 +241,9 @@ mod material_tests {
         assert_eq!(m.diffuse, 0.9);
         assert_eq!(m.specular, 0.9);
         assert_eq!(m.shininess, 200);
+        assert_eq!(m.reflective, 0.0);
+        assert_eq!(m.transparency, 0.0);
+        assert_eq!(m.refractive_index, 1.0);
     }
 
     #[test]
@@ -221,18 +253,26 @@ mod material_tests {
         let diffuse = 0.7;
         let specular = 0.8;
         let shininess = 1;
+        let reflective = 0.0;
+        let transparency = 0.5;
+        let refractive_index = 1.2;
         let m = Material::new(
             ColorType::Color(color),
             ambient,
             diffuse,
             specular,
             shininess,
+            reflective,
+            transparency,
+            refractive_index,
         );
         assert_eq!(m.color, ColorType::Color(color));
         assert_eq!(m.ambient, ambient);
         assert_eq!(m.diffuse, diffuse);
         assert_eq!(m.specular, specular);
         assert_eq!(m.shininess, shininess);
+        assert_eq!(m.transparency, transparency);
+        assert_eq!(m.refractive_index, refractive_index);
     }
 
     #[test]
@@ -429,5 +469,12 @@ mod lighting_tests {
             true,
         );
         assert_eq!(result, Color::new(0.1, 0.1, 0.1));
+    }
+
+    #[test]
+    fn new_glass() {
+        let m = Material::new_glass();
+        assert_eq!(m.transparency, 1.0);
+        assert_eq!(m.refractive_index, 1.5);
     }
 }

@@ -26,27 +26,28 @@ fn main() {
     floor.material_mut().color = ColorType::Pattern(Pattern::checker(WHITE, BLACK));
     floor.material_mut().specular = 0.0;
 
-
     let mut left_wall = Plane::default();
     left_wall.set_transformation_matrix(
         Mat4::new_translation(0, 0, 5)
             * Mat4::new_rotation_y(-PI / 4.0)
-            * Mat4::new_rotation_x(PI / 2.0)
+            * Mat4::new_rotation_x(PI / 2.0),
     );
     left_wall.set_material(Material::default());
-    let pattern =  Pattern::ring(WHITE, Color::new(0.8, 0.8, 0.0));
+    let pattern = Pattern::ring(WHITE, Color::new(0.8, 0.8, 0.0));
     //pattern.set_transformation_matrix(Mat4::new_scaling(0.1, 0.1, 0.1));
     left_wall.material_mut().color = ColorType::Pattern(pattern);
-
 
     let mut right_wall = Plane::default();
     right_wall.set_transformation_matrix(
         Mat4::new_translation(0, 0, 5)
             * Mat4::new_rotation_y(PI / 4.0)
-            * Mat4::new_rotation_x(PI / 2.0)
+            * Mat4::new_rotation_x(PI / 2.0),
     );
     right_wall.set_material(floor.material().clone());
-    right_wall.material_mut().color = ColorType::Pattern(Pattern::stripe(Color::new(0.0,    0.8,0.2), Color::new(0.6, 0.8, 1.0)));
+    right_wall.material_mut().color = ColorType::Pattern(Pattern::stripe(
+        Color::new(0.0, 0.8, 0.2),
+        Color::new(0.6, 0.8, 1.0),
+    ));
 
     let mut middle = Sphere::default();
     middle.set_transformation_matrix(Mat4::new_translation(-0.5, 1.0, 0.5));
@@ -62,7 +63,10 @@ fn main() {
             * Mat4::new_rotation_y(PI / 4.0),
     );
     right.set_material(Material::default());
-    right.material_mut().color = ColorType::Pattern(Pattern::gradient(Color::new(0.4, 1.0, 0.5), Color::new(0.6, 0.3,0.2)));
+    right.material_mut().color = ColorType::Pattern(Pattern::gradient(
+        Color::new(0.4, 1.0, 0.5),
+        Color::new(0.6, 0.3, 0.2),
+    ));
     right.material_mut().diffuse = 0.7;
     right.material_mut().specular = 0.3;
 
@@ -103,7 +107,7 @@ fn main() {
 
     let start_time = Instant::now();
     let world_ref = &world;
-    let canvas = camera.render(world_ref).unwrap();
+    let canvas = camera.render(world_ref, 0).unwrap();
 
     let end_time = start_time.elapsed().as_millis();
 

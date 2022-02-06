@@ -25,6 +25,7 @@ fn main() {
     floor.set_material(Material::default());
     floor.material_mut().color = ColorType::Pattern(Pattern::checker(WHITE, BLACK));
     floor.material_mut().specular = 0.0;
+    floor.material_mut().reflective = 0.2;
 
     let mut left_wall = Plane::default();
     left_wall.set_transformation_matrix(
@@ -107,7 +108,7 @@ fn main() {
 
     let start_time = Instant::now();
     let world_ref = &world;
-    let canvas = camera.par_render(world_ref).unwrap();
+    let canvas = camera.par_render(world_ref, 5).unwrap();
 
     let end_time = start_time.elapsed().as_millis();
 
@@ -122,6 +123,6 @@ fn main() {
 
     let ppm = write_to_ppm(canvas);
 
-    let mut file = File::create("./checker_par.ppm").unwrap();
+    let mut file = File::create("./reflective.ppm").unwrap();
     let _ = write!(file, "{}", ppm);
 }

@@ -100,7 +100,7 @@ impl Camera {
     }
 
     /// renders the given world using this camera.
-    pub fn render(&self, world: &World) -> Result<Canvas, CanvasError> {
+    pub fn render(&self, world: &World, recursion_limit: usize) -> Result<Canvas, CanvasError> {
         let mut image = Canvas::new(self.hsize, self.vsize);
 
         let mut intersections = Vec::new();
@@ -108,7 +108,7 @@ impl Camera {
         for y in 0..self.vsize {
             for x in 0..self.hsize {
                 let ray = self.ray_for_pixel(x, y);
-                let color = world.color_at(&ray, &mut intersections);
+                let color = world.color_at(&ray, &mut intersections, recursion_limit);
                 image.write_pixel(x, y, color)?;
             }
         }
@@ -118,11 +118,11 @@ impl Camera {
 
     /// Same as ```render()```, but uses all available system threads to parallelize.
     #[cfg(feature = "rayon")]
-    pub fn par_render(&self, world: &World) -> Result<Canvas, CanvasError> {
+    pub fn par_render(&self, world: &World, recursion_limit: usize) -> Result<Canvas, CanvasError> {
         let mut rows = Vec::with_capacity(self.vsize);
         (0..(self.vsize))
             .into_par_iter()
-            .map(|y| self.render_row(world, y))
+            .map(|y| self.render_row(world, y, recursion_limit))
             .collect_into_vec(&mut rows);
         let mut canvas = Canvas::new(self.hsize, self.vsize);
         for (row, rowv) in rows.iter().enumerate() {
@@ -134,12 +134,17 @@ impl Camera {
     }
 
     #[cfg(feature = "rayon")]
-    fn render_row(&self, world: &World, y: usize) -> Vec<crate::color::Color> {
+    fn render_row(
+        &self,
+        world: &World,
+        y: usize,
+        recursion_limit: usize,
+    ) -> Vec<crate::color::Color> {
         let mut vec = Vec::with_capacity(self.hsize);
         let mut intersections = Vec::new();
         for x in 0..self.hsize {
             let ray = self.ray_for_pixel(x, y);
-            let color = world.color_at(&ray, &mut intersections);
+            let color = world.color_at(&ray, &mut intersections, recursion_limit);
             vec.push(color);
         }
         vec
@@ -269,7 +274,7 @@ mod camera_tests {
         let to = Point::new(0, 0, 0);
         let up = Vector::new(0, 1, 0);
         c.set_transform(Camera::view_transform(from, to, up));
-        let image = c.render(&w).unwrap();
+        let image = c.render(&w, 0).unwrap();
         assert_eq!(
             image.pixel_at(5, 5).unwrap(),
             Color::new(0.38066, 0.47583, 0.2855)

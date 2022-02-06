@@ -35,5 +35,9 @@ required-features = ["rayon"]
 name = "par_patterns"
 required-features = ["rayon"]
 
+[[bin]]
+name = "par_reflection"
+required-features = ["rayon"]
+
 [features]
 shininess_as_float = []

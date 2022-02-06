@@ -89,7 +89,7 @@ fn main() {
 
     //let start_time = Instant::now();
 
-    let _canvas = camera.render(&world).unwrap();
+    let _canvas = camera.render(&world, 0).unwrap();
 
     //let end_time = start_time.elapsed().as_millis();
 

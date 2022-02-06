@@ -128,7 +128,7 @@ fn stripe_at(color_a: Color, color_b: Color, point: &Point) -> Color {
 fn gradient_at(color_a: Color, color_b: Color, point: &Point) -> Color {
     let distance = color_b - color_a;
     let mut fraction = point.x - point.x.floor();
-    if !((point.x.floor() % 2.0).abs() < EPSILON) {
+    if (point.x.floor() % 2.0).abs() > EPSILON {
         fraction = 1.0 - fraction;
     }
     color_a + distance * fraction

@@ -97,7 +97,7 @@ fn setup_camera() -> Camera {
 }
 
 fn world_bench(world: World, camera: Camera) {
-    let _canvas = camera.render(&world).unwrap();
+    let _canvas = camera.render(&world, 0).unwrap();
 }
 
 fn criterion_benchmark(c: &mut Criterion) {

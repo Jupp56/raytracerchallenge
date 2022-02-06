@@ -2,6 +2,7 @@
 
 use crate::{
     color::{Color, BLACK},
+    epsilon::epsilon_equal,
     intersection::{hit, Intersection, PreparedComputations},
     light::PointLight,
     material::{ColorType, Material, Shininess},
@@ -12,7 +13,7 @@ use crate::{
     tuple::Point,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 /// The world to render
 pub struct World {
     objects: Vec<Box<dyn Shape>>,
@@ -26,7 +27,16 @@ impl World {
 
         let shininess: Shininess = 200_usize as Shininess;
 
-        let material_s1 = Material::new(ColorType::Color(color_s1), 0.1, 0.7, 0.2, shininess);
+        let material_s1 = Material::new(
+            ColorType::Color(color_s1),
+            0.1,
+            0.7,
+            0.2,
+            shininess,
+            0.0,
+            0.0,
+            1.0,
+        );
         let mut s1 = Sphere::default();
         s1.set_material(material_s1);
 
@@ -59,23 +69,25 @@ impl World {
         &'a self,
         comps: &PreparedComputations,
         intersections: &mut Vec<Intersection<'a>>,
+        remaining_recursion: usize,
     ) -> Color {
         let mut lights = self.lights.iter();
         match lights.next() {
             Some(light) => {
                 let in_shadow = self.in_shadow(light, &comps.over_point, intersections);
-                let mut color = comps.object.render_at(comps, light, in_shadow, true);
+                let mut surface = comps.object.render_at(comps, light, in_shadow, true);
                 for light in lights {
                     let in_shadow = self.in_shadow(light, &comps.over_point, intersections);
-                    color = color + comps.object.render_at(comps, light, in_shadow, false);
+                    surface = surface + comps.object.render_at(comps, light, in_shadow, false);
                 }
-                color
+                let reflected = self.reflected_color_at(comps, remaining_recursion);
+                surface + reflected
             }
             None => BLACK,
         }
     }
 
-    /// Determines th color a ray produces.
+    /// Determines the color a ray produces.
     /// If it does not hit, returns BLACK.
     /// If it hits, returns the result of the rendered point.
     /// The intersections argument is only for saving on allocations - if in doubt, pass a new vector.
@@ -83,17 +95,43 @@ impl World {
         &'a self,
         r: &Ray,
         intersections: &mut Vec<Intersection<'a>>,
+        remaining_recursion: usize,
     ) -> Color {
         self.intersect(r, intersections);
         let hit = hit(intersections);
         let color = match hit {
             Some(h) => {
                 let comps = h.prepare_computations(r);
-                self.shade_hit(&comps, intersections)
+                self.shade_hit(&comps, intersections, remaining_recursion)
             }
             None => BLACK,
         };
         color
+    }
+
+    /// Returns the reflected color at the object
+    /// Returns black if either
+    /// 1. the reflective index is epsilon_equal 0
+    /// 2. the remaining recursion has reached
+    pub(crate) fn reflected_color_at(
+        &self,
+        comps: &PreparedComputations,
+        remaining_recursion: usize,
+    ) -> Color {
+        if remaining_recursion == 0 {
+            return Color::new(0.0, 0.0, 0.0);
+        }
+
+        if epsilon_equal(comps.object.material().reflective, 0.0) {
+            return Color::new(0, 0, 0);
+        }
+
+        let reflect_ray = Ray::new(comps.over_point, comps.reflectv);
+
+        let mut intersections = Vec::new();
+
+        let color = self.color_at(&reflect_ray, &mut intersections, remaining_recursion - 1);
+        color * comps.object.material().reflective
     }
 
     /// Adds an object to the world
@@ -117,6 +155,11 @@ impl World {
     /// Returns a reference to a vector of all objects
     pub fn objects(&self) -> &Vec<Box<dyn Shape>> {
         &self.objects
+    }
+
+    /// Returns a reference to a vector of all objects
+    pub fn objects_mut(&mut self) -> &mut Vec<Box<dyn Shape>> {
+        &mut self.objects
     }
 
     /// Returns a reference to a vector of all lights
@@ -146,17 +189,10 @@ impl World {
     }
 }
 
-impl Default for World {
-    fn default() -> Self {
-        Self {
-            objects: Default::default(),
-            lights: Default::default(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod world_tests {
+    use std::thread;
+
     use crate::{
         color::{Color, BLACK, WHITE},
         epsilon::epsilon_equal,
@@ -165,7 +201,7 @@ mod world_tests {
         material::{ColorType, Material},
         matrix::Mat4,
         ray::Ray,
-        shapes::{shape::Shape, sphere::Sphere},
+        shapes::{plane::Plane, shape::Shape, sphere::Sphere},
         tuple::{Point, Vector},
         world::World,
     };
@@ -221,7 +257,7 @@ mod world_tests {
         let i = Intersection::new(4.0, s);
         let comps = i.prepare_computations(&r);
         let mut intersections = Vec::new();
-        let c = w.shade_hit(&comps, &mut intersections);
+        let c = w.shade_hit(&comps, &mut intersections, 0);
         assert_eq!(c, Color::new(0.38066, 0.47583, 0.2855));
     }
 
@@ -238,7 +274,7 @@ mod world_tests {
         let i = Intersection::new(0.5, s);
         let mut intersections = Vec::new();
         let comps = i.prepare_computations(&r);
-        let c = w.shade_hit(&comps, &mut intersections);
+        let c = w.shade_hit(&comps, &mut intersections, 0);
         assert_eq!(c, Color::new(0.90498, 0.90498, 0.90498));
     }
 
@@ -247,7 +283,7 @@ mod world_tests {
         let w = World::test_world();
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 1, 0));
         let mut intersections = Vec::new();
-        let c = w.color_at(&r, &mut intersections);
+        let c = w.color_at(&r, &mut intersections, 0);
         assert_eq!(c, BLACK);
     }
 
@@ -256,7 +292,7 @@ mod world_tests {
         let w = World::test_world();
         let r = Ray::new(Point::new(0, 0, -5), Vector::new(0, 0, 1));
         let mut intersections = Vec::new();
-        let c = w.color_at(&r, &mut intersections);
+        let c = w.color_at(&r, &mut intersections, 0);
         assert_eq!(c, Color::new(0.38066, 0.47583, 0.2855));
     }
     #[test]
@@ -275,7 +311,7 @@ mod world_tests {
 
         let r = Ray::new(Point::new(0.0, 0.0, 0.75), Vector::new(0.0, 0.0, -1.0));
         let mut intersections = Vec::new();
-        let c = w.color_at(&r, &mut intersections);
+        let c = w.color_at(&r, &mut intersections, 0);
         assert_eq!(c, inner_color);
     }
 
@@ -396,8 +432,102 @@ mod world_tests {
 
         let comps = i.prepare_computations(&r);
         let mut intersections = Vec::new();
-        let c = w.shade_hit(&comps, &mut intersections);
+        let c = w.shade_hit(&comps, &mut intersections, 0);
 
         assert_eq!(c, Color::new(0.1, 0.1, 0.1));
+    }
+
+    #[test]
+    fn reflected_color_on_nonreflect_material() {
+        let mut w = World::test_world();
+        let r = Ray::new(Point::new(0, 0, 0), Vector::new(0, 0, 1));
+
+        let shape = w.objects_mut().get_mut(1).unwrap();
+        shape.material_mut().ambient = 1.0;
+
+        let shape = w.objects().get(1).unwrap();
+
+        let i = Intersection::new(1.0, shape.as_shape());
+        let comps = i.prepare_computations(&r);
+        let color = w.reflected_color_at(&comps, 1);
+        assert_eq!(color, Color::new(0, 0, 0));
+    }
+
+    #[test]
+    fn reflected_color_on_reflect_material() {
+        let mut w = World::test_world();
+
+        let mut shape = Plane::default();
+        shape.material_mut().reflective = 0.5;
+        shape.set_transformation_matrix(Mat4::new_translation(0, -1, 0));
+        w.add_object(Box::new(shape));
+
+        let r = Ray::new(
+            Point::new(0, 0, -3),
+            Vector::new(0.0, -(2.0_f64.sqrt()) / 2.0_f64, 2.0_f64.sqrt() / 2.0_f64),
+        );
+        let shape = w.objects().get(2).unwrap();
+        let i = Intersection::new(2.0_f64.sqrt(), shape.as_shape());
+        let comps = i.prepare_computations(&r);
+        let color = w.reflected_color_at(&comps, 1);
+        assert_eq!(color, Color::new(0.19032, 0.2379, 0.14274));
+    }
+
+    #[test]
+    fn shade_hit_on_reflect_material() {
+        let mut w = World::test_world();
+
+        let mut shape = Plane::default();
+        shape.material_mut().reflective = 0.5;
+        shape.set_transformation_matrix(Mat4::new_translation(0, -1, 0));
+        w.add_object(Box::new(shape));
+
+        let r = Ray::new(
+            Point::new(0, 0, -3),
+            Vector::new(0.0, -(2.0_f64.sqrt()) / 2.0_f64, 2.0_f64.sqrt() / 2.0_f64),
+        );
+
+        let shape = w.objects().get(2).unwrap();
+        let intersection = Intersection::new(2.0_f64.sqrt(), shape.as_shape());
+        let comps = intersection.prepare_computations(&r);
+
+        let mut intersections = Vec::new();
+        let color = w.shade_hit(&comps, &mut intersections, 1);
+        assert_eq!(color, Color::new(0.87677, 0.92436, 0.82918));
+    }
+
+    #[test]
+    fn infinite_recursion() {
+        let child = thread::Builder::new()
+            .stack_size(1024 * 1024)
+            .spawn(move || {
+                let mut w = World::default();
+                w.add_light(PointLight::new(
+                    Point::const_new(0.0, 0.0, 0.0),
+                    Color::new(1, 1, 1),
+                ));
+
+                let mut lower = Plane::default();
+                lower.material_mut().reflective = 1.0;
+                lower.set_transformation_matrix(Mat4::new_translation(0, -1, 0));
+                w.add_object(Box::new(lower));
+
+                let mut upper = Plane::default();
+                upper.material_mut().reflective = 1.0;
+                upper.set_transformation_matrix(Mat4::new_translation(0, 1, 0));
+                w.add_object(Box::new(upper));
+
+                let r = Ray::new(
+                    Point::const_new(0.0, 0.0, 0.0),
+                    Vector::const_new(0.0, 1.0, 0.0),
+                );
+
+                let mut intersections = Vec::new();
+
+                w.color_at(&r, &mut intersections, 10);
+            })
+            .unwrap();
+
+        child.join().unwrap();
     }
 }
