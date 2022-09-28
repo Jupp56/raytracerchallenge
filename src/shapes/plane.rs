@@ -58,14 +58,17 @@ impl Shape for Plane {
         NORMAL
     }
 
+    #[mutants::skip]
     fn eq(&self, other: &dyn std::any::Any) -> bool {
         other.downcast_ref::<Self>().map_or(false, |a| self == a)
     }
 
+    #[mutants::skip]
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
 
+    #[mutants::skip]
     fn material_mut(&mut self) -> &mut crate::material::Material {
         &mut self.material
     }
@@ -79,6 +82,7 @@ impl Shape for Plane {
         self.material = m;
     }
 
+    #[mutants::skip]
     fn as_shape(&self) -> &dyn Shape {
         self
     }

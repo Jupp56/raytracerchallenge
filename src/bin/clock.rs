@@ -5,6 +5,7 @@ use raytracerchallenge::{
     canvas::Canvas, color::Color, matrix::Mat4, ppm::write_to_ppm, tuple::Point,
 };
 
+#[mutants::skip]
 fn main() {
     let mut c = Canvas::new(100, 100);
 

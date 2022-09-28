@@ -4,3 +4,5 @@ Cargo.lock
 *.ppm
 perf.data
 perf.data.old
+mutants.out
+mutants.out.old

@@ -1,9 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use raytracerchallenge::{
-    matrix::Mat4,
-    ray::Ray,
-    tuple::{Point, Vector},
-};
+use raytracerchallenge::matrix::Mat4;
 
 fn matrix_inverse(m: Mat4) {
     let _m1 = m.inverse();

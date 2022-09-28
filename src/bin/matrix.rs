@@ -2,19 +2,19 @@ use raytracerchallenge::{
     matrix::{Mat4, IDENTITY_MATRIX_4},
     tuple::Point,
 };
-
+#[mutants::skip]
 fn main() {
     invert_identity();
     multiply_by_inverse();
     inverse_transpose();
     identity_tuple();
 }
-
+#[mutants::skip]
 fn invert_identity() {
     let m = IDENTITY_MATRIX_4;
     println!("The inverted identity matrix: \n\n{:?}\n\n", m.inverse());
 }
-
+#[mutants::skip]
 fn multiply_by_inverse() {
     let a = Mat4::new([
         [3., -9., 7., 3.],
@@ -28,7 +28,7 @@ fn multiply_by_inverse() {
         a * a.inverse()
     );
 }
-
+#[mutants::skip]
 fn inverse_transpose() {
     let a = Mat4::new([
         [3., -9., 7., 3.],
@@ -43,7 +43,7 @@ fn inverse_transpose() {
         a.transpose().inverse()
     );
 }
-
+#[mutants::skip]
 fn identity_tuple() {
     let mut a = IDENTITY_MATRIX_4;
     let mut b = IDENTITY_MATRIX_4;

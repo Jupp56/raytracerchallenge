@@ -17,6 +17,8 @@ use raytracerchallenge::{
     tuple::{Point, Vector},
     world::World,
 };
+
+#[mutants::skip]
 fn main() {
     let mut floor = Sphere::default();
     floor.set_transformation_matrix(Mat4::new_scaling(10.0, 0.01, 10.0));

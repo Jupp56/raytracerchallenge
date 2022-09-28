@@ -1,7 +1,7 @@
-use std::ops::{Index, IndexMut, Mul, MulAssign};
+use std::{ops::{Index, IndexMut, Mul, MulAssign}, collections::HashSet};
 
 use crate::{
-    epsilon::epsilon_equal,
+    epsilon::EpsilonEqual,
     tuple::{Point, Vector},
 };
 
@@ -76,7 +76,7 @@ impl<const SIZE: usize> PartialEq for Matrix<SIZE> {
     fn eq(&self, other: &Self) -> bool {
         for x in 0..SIZE {
             for y in 0..SIZE {
-                if !epsilon_equal(self.content[x][y], other.content[x][y]) {
+                if !self.content[x][y].e_equals(other.content[x][y]) {
                     return false;
                 }
             }
@@ -601,6 +601,26 @@ mod matrix_tests {
     }
 
     #[test]
+    fn inverse_possible_2x2() {
+        let m_inv = Mat2::new([[6., 4.], [5., 5.]]);
+
+        let m_non_inv = Mat2::new([[-4., 2.], [0., 0.]]);
+
+        assert!(m_inv.invertible());
+        assert!(!m_non_inv.invertible());
+    }
+
+    #[test]
+    fn inverse_possible_3x3() {
+        let m_inv = Mat3::new([[6., 4., 4.], [5., 5., 7.], [4., -9., 3.]]);
+
+        let m_non_inv = Mat3::new([[-4., 2., -2.], [9., 6., 2.], [0., 0., 0.]]);
+
+        assert!(m_inv.invertible());
+        assert!(!m_non_inv.invertible());
+    }
+
+    #[test]
     fn determinant_4x4() {
         let m4 = Mat4::new([
             [-2., -8., 3., 5.],
@@ -656,9 +676,9 @@ mod matrix_tests {
 
         assert_eq!(m.determinant(), 532.);
         assert_eq!(m.cofactor(2, 3), -160.);
-        assert!(epsilon_equal(b[3][2], -160. / 532.));
+        assert!(b[3][2].e_equals(-160. / 532.));
         assert_eq!(m.cofactor(3, 2), 105.);
-        assert!(epsilon_equal(b[2][3], 105. / 532.));
+        assert!(b[2][3].e_equals(105. / 532.));
 
         assert_eq!(b, reference);
     }

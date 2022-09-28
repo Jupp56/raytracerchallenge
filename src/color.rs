@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul, Sub};
 
-use crate::epsilon::epsilon_equal;
+use crate::epsilon::EpsilonEqual;
 
 /// The color black
 pub const BLACK: Color = Color {
@@ -42,9 +42,9 @@ impl Color {
 
 impl PartialEq for Color {
     fn eq(&self, other: &Self) -> bool {
-        epsilon_equal(self.red, other.red)
-            && epsilon_equal(self.green, other.green)
-            && epsilon_equal(self.blue, other.blue)
+        self.red.e_equals(other.red)
+            && self.green.e_equals(other.green)
+            && self.blue.e_equals(other.blue)
     }
 }
 

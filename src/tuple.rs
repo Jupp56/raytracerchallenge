@@ -1,6 +1,6 @@
 use std::ops::{Add, Div, Mul, Neg, Sub};
 
-use crate::epsilon::epsilon_equal;
+use crate::epsilon::EpsilonEqual;
 
 #[derive(Clone, Copy, Debug)]
 /// A point in 3d euclidan space (left handed coordinates)
@@ -102,17 +102,13 @@ impl Point {
 
 impl PartialEq for Point {
     fn eq(&self, other: &Self) -> bool {
-        epsilon_equal(self.x, other.x)
-            && epsilon_equal(self.y, other.y)
-            && epsilon_equal(self.z, other.z)
+        self.x.e_equals(other.x) && self.y.e_equals(other.y) && self.z.e_equals(other.z)
     }
 }
 
 impl PartialEq for Vector {
     fn eq(&self, other: &Self) -> bool {
-        epsilon_equal(self.x, other.x)
-            && epsilon_equal(self.y, other.y)
-            && epsilon_equal(self.z, other.z)
+        self.x.e_equals(other.x) && self.y.e_equals(other.y) && self.z.e_equals(other.z)
     }
 }
 

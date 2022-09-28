@@ -1,6 +1,6 @@
 use crate::{
     color::{Color, BLACK},
-    epsilon::epsilon_equal,
+    epsilon::EpsilonEqual,
     light::PointLight,
     pattern::Pattern,
     shapes::shape::Shape,
@@ -60,6 +60,7 @@ impl Default for Material {
 }
 
 #[cfg(feature = "shininess_as_float")]
+#[mutants::skip]
 impl<'a> PartialEq for Material<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.color == other.color
@@ -74,10 +75,10 @@ impl<'a> PartialEq for Material<'a> {
 impl PartialEq for Material {
     fn eq(&self, other: &Self) -> bool {
         self.color == other.color
-            && epsilon_equal(self.ambient, other.ambient)
-            && epsilon_equal(self.diffuse, other.diffuse)
-            && epsilon_equal(self.specular, other.specular)
-            && self.shininess == other.shininess
+            && self.ambient.e_equals(other.ambient)
+            && self.diffuse.e_equals(other.diffuse)
+            && self.specular.e_equals(other.specular)
+            && self.shininess.e_equals(other.shininess)
     }
 }
 
@@ -210,6 +211,7 @@ pub enum ColorType {
 use core::fmt::Debug;
 
 impl Debug for ColorType {
+    #[mutants::skip]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Color(arg0) => f.debug_tuple("Color").field(arg0).finish(),

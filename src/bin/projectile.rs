@@ -19,11 +19,13 @@ struct Environment {
 }
 
 #[allow(dead_code)]
+#[mutants::skip]
 fn tick(environment: &Environment, projectile: &mut Projectile) {
     projectile.position = projectile.position + projectile.velocity;
     projectile.velocity = projectile.velocity + environment.gravity + environment.wind;
 }
 
+#[mutants::skip]
 pub fn main() {
     let mut p = Projectile {
         position: Point::new(0., 1., 0.),

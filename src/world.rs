@@ -2,7 +2,7 @@
 
 use crate::{
     color::{Color, BLACK},
-    epsilon::epsilon_equal,
+    epsilon::EpsilonEqual,
     intersection::{hit, Intersection, PreparedComputations},
     light::PointLight,
     material::{ColorType, Material, Shininess},
@@ -122,7 +122,7 @@ impl World {
             return Color::new(0.0, 0.0, 0.0);
         }
 
-        if epsilon_equal(comps.object.material().reflective, 0.0) {
+        if comps.object.material().reflective.e_equals(0.0) {
             return Color::new(0, 0, 0);
         }
 
@@ -195,7 +195,7 @@ mod world_tests {
 
     use crate::{
         color::{Color, BLACK, WHITE},
-        epsilon::epsilon_equal,
+        epsilon::EpsilonEqual,
         intersection::Intersection,
         light::PointLight,
         material::{ColorType, Material},
@@ -242,10 +242,10 @@ mod world_tests {
         let mut intersections = Vec::new();
         w.intersect(&r, &mut intersections);
         assert_eq!(intersections.len(), 4);
-        assert!(epsilon_equal(intersections[0].t, 4.));
-        assert!(epsilon_equal(intersections[1].t, 4.5));
-        assert!(epsilon_equal(intersections[2].t, 5.5));
-        assert!(epsilon_equal(intersections[3].t, 6.));
+        assert!(intersections[0].t.e_equals(4.));
+        assert!(intersections[1].t.e_equals(4.5));
+        assert!(intersections[2].t.e_equals(5.5));
+        assert!(intersections[3].t.e_equals(6.));
     }
 
     #[test]

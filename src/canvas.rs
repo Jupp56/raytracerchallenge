@@ -67,20 +67,24 @@ impl Canvas {
         !(x >= self.width || y >= self.height)
     }
 
+    #[mutants::skip]
     /// Vertical size of the canvas
     pub const fn height(&self) -> usize {
         self.height
     }
 
+    #[mutants::skip]
     /// Horizontal size of the canvas
     pub const fn width(&self) -> usize {
         self.width
     }
 
+    #[mutants::skip]
     /// Returns the backing [`Vec`] of this canvas.
-    pub fn get_canvas(&self) -> Vec<Vec<Color>> {
-        self.canvas.clone()
+    pub fn get_canvas(&self) -> &Vec<Vec<Color>> {
+        &self.canvas
     }
+    
 }
 
 #[cfg(test)]

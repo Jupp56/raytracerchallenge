@@ -211,7 +211,7 @@ mod camera_tests {
     use crate::{
         camera::Camera,
         color::Color,
-        epsilon::epsilon_equal,
+        epsilon::EpsilonEqual,
         matrix::{Mat4, IDENTITY_MATRIX_4},
         tuple::{Point, Vector},
         world::World,
@@ -230,13 +230,13 @@ mod camera_tests {
     #[test]
     fn pixel_size_horizontal() {
         let c = Camera::new(200, 125, PI / 2.);
-        assert!(epsilon_equal(c.pixel_size, 0.01));
+        assert!(c.pixel_size.e_equals(0.01));
     }
 
     #[test]
     fn pixel_size_vertical() {
         let c = Camera::new(125, 200, PI / 2.);
-        assert!(epsilon_equal(c.pixel_size, 0.01));
+        assert!(c.pixel_size.e_equals(0.01));
     }
 
     #[test]

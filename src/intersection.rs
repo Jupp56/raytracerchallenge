@@ -97,7 +97,7 @@ pub fn hit<'a>(intersections: &mut Vec<Intersection<'a>>) -> Option<Intersection
 #[cfg(test)]
 mod intersection_tests {
     use crate::{
-        epsilon::epsilon_equal,
+        epsilon::EpsilonEqual,
         intersection::Intersection,
         shapes::{shape::Shape, sphere::Sphere},
     };
@@ -119,8 +119,8 @@ mod intersection_tests {
         let i2 = Intersection::new(2, so);
         let xs = vec![i1, i2];
         assert_eq!(xs.len(), 2);
-        assert!(epsilon_equal(xs[0].t, 1.));
-        assert!(epsilon_equal(xs[1].t, 2.));
+        assert!(xs[0].t.e_equals(1.));
+        assert!(xs[1].t.e_equals(2.));
     }
 }
 
