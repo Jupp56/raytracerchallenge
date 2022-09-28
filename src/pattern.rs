@@ -114,6 +114,18 @@ impl Pattern {
 
         pattern_fn.into()
     }
+
+    /// test pattern that returns the point hit as color. x -> red, y -> green, z -> blue
+    pub fn test_pattern() -> Self {
+        let pattern_fn = move |point| test_at(&point);
+
+        #[cfg(not(feature = "rayon"))]
+        let pattern_fn: PatternFunction = Rc::new(pattern_fn);
+        #[cfg(feature = "rayon")]
+        let pattern_fn: PatternFunction = Arc::new(pattern_fn);
+
+        pattern_fn.into()
+    }
 }
 
 /// Returns the result of the stripe pattern at a given coordinate in pattern space
@@ -146,6 +158,7 @@ fn ring_at(color_a: Color, color_b: Color, point: &Point) -> Color {
     }
 }
 
+/// Checker pattern function
 fn checker_at(color_a: Color, color_b: Color, point: &Point) -> Color {
     let combined_magnitude = point.x.floor() + point.y.floor() + point.z.floor();
     if combined_magnitude.abs() % 2.0 < EPSILON {
@@ -153,6 +166,11 @@ fn checker_at(color_a: Color, color_b: Color, point: &Point) -> Color {
     } else {
         color_b
     }
+}
+
+/// Test function, converts the point into a color.
+fn test_at(point: &Point) -> Color {
+    Color::new(point.x, point.y, point.z)
 }
 
 impl Debug for Pattern {

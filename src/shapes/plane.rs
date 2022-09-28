@@ -10,7 +10,7 @@ use super::shape::{Shape, ShapeBound};
 
 const NORMAL: Vector = Vector::const_new(0.0, 1.0, 0.0);
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 /// A 2d, infinite plane. Comparatively cheap to render as it's normal is constant (in object space) and rays only intersect once.
 pub struct Plane {
     transformation_matrix: Mat4,

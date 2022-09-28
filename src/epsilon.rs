@@ -12,7 +12,6 @@ impl EpsilonEqual for f64 {
     }
 }
 
-
 /// for swapping in a more performant int for a float calculation
 impl EpsilonEqual for i32 {
     fn e_equals(self, other: Self) -> bool {
@@ -41,5 +40,4 @@ mod equal_tests {
         assert!(1.e_equals(1));
         assert!(!1.e_equals(2));
     }
-
 }

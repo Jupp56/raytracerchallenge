@@ -1,4 +1,4 @@
-use std::{ops::{Index, IndexMut, Mul, MulAssign}, collections::HashSet};
+use std::ops::{Index, IndexMut, Mul, MulAssign};
 
 use crate::{
     epsilon::EpsilonEqual,

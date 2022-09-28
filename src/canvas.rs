@@ -84,7 +84,6 @@ impl Canvas {
     pub fn get_canvas(&self) -> &Vec<Vec<Color>> {
         &self.canvas
     }
-    
 }
 
 #[cfg(test)]

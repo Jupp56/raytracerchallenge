@@ -11,7 +11,6 @@ use raytracerchallenge::{
     world::World,
 };
 
-
 #[mutants::skip]
 fn main() {
     let mut floor = Sphere::default();

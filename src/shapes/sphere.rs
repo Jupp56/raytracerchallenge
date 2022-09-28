@@ -104,6 +104,16 @@ impl Default for Sphere {
 }
 
 #[cfg(test)]
+impl Sphere {
+    pub fn new_glass() -> Self {
+        Self {
+            material: Material::new_glass(),
+            ..Default::default()
+        }
+    }
+}
+
+#[cfg(test)]
 mod sphere_tests {
 
     use crate::{
